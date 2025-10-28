@@ -22,12 +22,14 @@ ROS2_SCRIPTS = {
     'turtlesim': {
         'command': f'docker exec --user ubuntu -e DISPLAY=:1 {DOCKER_CONTAINER} bash -c "source /opt/ros/humble/setup.bash && ros2 run turtlesim turtlesim_node"',
         'description': 'TurtleSim Node',
-        'status': 'stopped'
+        'status': 'stopped',
+        'pid': None
     },
     'rviz2': {
         'command': f'docker exec --user ubuntu -e DISPLAY=:1 {DOCKER_CONTAINER} bash -c "source /opt/ros/humble/setup.bash && rviz2"',
         'description': 'RViz2 Visualization',
-        'status': 'stopped'
+        'status': 'stopped',
+        'pid': None
     }
 }
 
@@ -44,6 +46,7 @@ def get_scripts():
             # Process has terminated
             del running_processes[script_id]
             ROS2_SCRIPTS[script_id]['status'] = 'stopped'
+            ROS2_SCRIPTS[script_id]['pid'] = None
     
     return jsonify(ROS2_SCRIPTS)
 
@@ -70,9 +73,11 @@ def start_script(script_id):
         )
         running_processes[script_id] = process
         ROS2_SCRIPTS[script_id]['status'] = 'running'
+        ROS2_SCRIPTS[script_id]['pid'] = process.pid
         
+        script_name = ROS2_SCRIPTS[script_id]['description']
         logger.info(f'Successfully started {script_id} with PID: {process.pid}')
-        return jsonify({'message': f'Started {script_id}', 'pid': process.pid})
+        return jsonify({'message': f'✓ Started {script_name} (PID: {process.pid})', 'pid': process.pid})
     except Exception as e:
         logger.error(f'Failed to start {script_id}: {str(e)}')
         return jsonify({'error': str(e)}), 500
@@ -81,21 +86,25 @@ def start_script(script_id):
 def stop_script(script_id):
     logger.info(f'Attempting to stop script: {script_id}')
     
+    script_name = ROS2_SCRIPTS[script_id]['description']
+    
     # Always ensure status is set to stopped
     ROS2_SCRIPTS[script_id]['status'] = 'stopped'
+    ROS2_SCRIPTS[script_id]['pid'] = None
     
     if script_id not in running_processes:
         logger.warning(f'{script_id} is already stopped')
-        return jsonify({'message': f'{script_id} is already stopped'})
+        return jsonify({'message': f'✓ {script_name} is already stopped'})
     
     try:
         process = running_processes[script_id]
+        pid = process.pid
         
         # Check if process is still alive
         if process.poll() is not None:
             # Process already terminated
             del running_processes[script_id]
-            return jsonify({'message': f'Stopped {script_id}'})
+            return jsonify({'message': f'✓ Stopped {script_name} (PID: {pid})'})
         
         # Kill the process inside the Docker container
         # Find and kill the actual ROS2 process by name
@@ -119,12 +128,12 @@ def stop_script(script_id):
         
         del running_processes[script_id]
         
-        return jsonify({'message': f'Stopped {script_id}'})
+        return jsonify({'message': f'✓ Stopped {script_name} (PID: {pid})'})
     except Exception as e:
         # Clean up even on error
         if script_id in running_processes:
             del running_processes[script_id]
-        return jsonify({'message': f'Stopped {script_id}'})
+        return jsonify({'message': f'✓ Stopped {script_name}'})
 
 
 if __name__ == '__main__':

@@ -276,3 +276,121 @@ button {
         font-size: clamp(0.8rem, 3vw, 0.875rem);
     }
 }
+
+/* Toast Notification Styles */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 400px;
+}
+
+@media (max-width: 768px) {
+    #toast-container {
+        left: 10px;
+        right: 10px;
+        top: 10px;
+        max-width: none;
+    }
+}
+
+.toast {
+    background: white;
+    border-radius: 8px;
+    padding: 16px 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 300px;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@media (max-width: 768px) {
+    .toast {
+        min-width: auto;
+    }
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-success {
+    border-left: 4px solid #10b981;
+    background: linear-gradient(to right, #f0fdf4 0%, #ffffff 20%);
+}
+
+.toast-error {
+    border-left: 4px solid #ef4444;
+    background: linear-gradient(to right, #fef2f2 0%, #ffffff 20%);
+}
+
+.toast-info {
+    border-left: 4px solid #3b82f6;
+    background: linear-gradient(to right, #eff6ff 0%, #ffffff 20%);
+}
+
+.toast-icon {
+    font-size: 20px;
+    font-weight: bold;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.toast-success .toast-icon {
+    background: #10b981;
+    color: white;
+}
+
+.toast-error .toast-icon {
+    background: #ef4444;
+    color: white;
+}
+
+.toast-info .toast-icon {
+    background: #3b82f6;
+    color: white;
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1a1a1a;
+    font-weight: 500;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    color: #666;
+    line-height: 1;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    border-radius: 4px;
+}
+
+.toast-close:hover {
+    color: #1a1a1a;
+    background: rgba(0, 0, 0, 0.05);
+    transform: none;
+    box-shadow: none;
+}

@@ -15,6 +15,10 @@
             <h1>MuSoHu</h1>
             <p class="subtitle">Multi-Modal Social Human Navigation Dataset</p>
         </div>
+        
+        <!-- Toast Container -->
+        <div id="toast-container"></div>
+        
         <div id="scripts-container"></div>
         
         <footer class="footer">
@@ -23,6 +27,36 @@
     </div>
 
     <script>
+        // Toast Notification System
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            const icons = {
+                success: '✓',
+                error: '✗',
+                info: 'ℹ'
+            };
+            
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type] || icons.info}</div>
+                <div class="toast-message">${message}</div>
+                <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // Auto-remove after 4 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
         async function loadScripts() {
             const response = await fetch('/api/scripts');
             const scripts = await response.json();
@@ -41,13 +75,16 @@
             card.className = 'script-card';
             
             const isRunning = script.status === 'running';
+            const statusText = isRunning 
+                ? `🟢 Running${script.pid ? ` (PID: ${script.pid})` : ''}`
+                : '🔴 Stopped';
             
             card.innerHTML = `
                 <h3>${script.description}</h3>
                 <p><code>${script.command}<br>&nbsp;</code></p>
                 <div style="margin-top: auto;">
                     <div class="status ${isRunning ? 'running' : 'stopped'}">
-                        ${isRunning ? '🟢 Running' : '🔴 Stopped'}
+                        ${statusText}
                     </div>
                     <button onclick="toggleScript('${id}', ${isRunning})" 
                             class="${isRunning ? 'btn-stop' : 'btn-start'}">
@@ -70,13 +107,13 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(result.message);
+                    showToast(result.message, 'success');
                     loadScripts();
                 } else {
-                    alert('Error: ' + result.error);
+                    showToast('Error: ' + result.error, 'error');
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
+                showToast('Error: ' + error.message, 'error');
             }
         }
 
