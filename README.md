@@ -40,5 +40,19 @@ docker-compose up -d
 - **ROS2 VNC Desktop**: http://localhost:6080 (password: `ubuntu`, hostname: `robotixx`)
 - **Web Interface**: http://localhost:5001 (hostname: `robotixx-webapp`)
 
+### Testing Hardware Devices
+
+#### ReSpeaker 4 Mic Array
+To verify that the ReSpeaker microphone array is accessible in the container:
+```bash
+docker exec -it ros2_vnc arecord -l
+```
+
+Expected output should show:
+```
+card 0: ArrayUAC10 [ReSpeaker 4 Mic Array (UAC1.0)], device 0: USB Audio [USB Audio]
+```
+
+
 
 
