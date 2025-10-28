@@ -3,9 +3,13 @@ from flask_cors import CORS
 import subprocess
 import os
 import signal
+from logging_config import setup_logging
 
 app = Flask(__name__)
 CORS(app)
+
+# Setup logging
+logger = setup_logging(app)
 
 # Store running processes
 running_processes = {}
@@ -45,10 +49,14 @@ def get_scripts():
 
 @app.route('/api/scripts/<script_id>/start', methods=['POST'])
 def start_script(script_id):
+    logger.info(f'Attempting to start script: {script_id}')
+    
     if script_id not in ROS2_SCRIPTS:
+        logger.error(f'Script not found: {script_id}')
         return jsonify({'error': 'Script not found'}), 404
     
     if script_id in running_processes:
+        logger.warning(f'Script already running: {script_id}')
         return jsonify({'error': 'Script already running'}), 400
     
     try:
@@ -63,16 +71,21 @@ def start_script(script_id):
         running_processes[script_id] = process
         ROS2_SCRIPTS[script_id]['status'] = 'running'
         
+        logger.info(f'Successfully started {script_id} with PID: {process.pid}')
         return jsonify({'message': f'Started {script_id}', 'pid': process.pid})
     except Exception as e:
+        logger.error(f'Failed to start {script_id}: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/scripts/<script_id>/stop', methods=['POST'])
 def stop_script(script_id):
+    logger.info(f'Attempting to stop script: {script_id}')
+    
     # Always ensure status is set to stopped
     ROS2_SCRIPTS[script_id]['status'] = 'stopped'
     
     if script_id not in running_processes:
+        logger.warning(f'{script_id} is already stopped')
         return jsonify({'message': f'{script_id} is already stopped'})
     
     try:
@@ -115,4 +128,6 @@ def stop_script(script_id):
 
 
 if __name__ == '__main__':
+    logger.info('Starting MuSoHu ROS2 Script Manager')
+    logger.info(f'Available scripts: {", ".join(ROS2_SCRIPTS.keys())}')
     app.run(host='0.0.0.0', port=5001, debug=True)
