@@ -149,9 +149,7 @@ audio_files/
 media/
 
 # Docker
-Dockerfile*
-docker-compose*.yml
-.dockerignore
+docker-compose.override.yml  # Auto-generated on Linux for hardware access
 
 # Terraform
 *.tfstate

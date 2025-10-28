@@ -1,0 +1,5 @@
+FROM tiryoh/ros2-desktop-vnc:humble
+
+EXPOSE 80 5901
+
+CMD ["/usr/local/bin/vnc-startup.sh"]
