@@ -49,8 +49,9 @@ RUN cp /home/ubuntu/ros2_ws/src/respeaker_ros/config/*.rules /etc/udev/rules.d/ 
 # Install Python dependencies for ReSpeaker
 RUN pip3 install --upgrade pyusb click pyaudio==0.2.14 pixel-ring
 
-# Install additional ROS2 dependencies
-RUN apt-get update && apt-get install -y ros-humble-tf-transformations python3-transforms3d && rm -rf /var/lib/apt/lists/*
+# Install additional ROS2 dependencies and fix transforms3d compatibility
+RUN apt-get update && apt-get install -y ros-humble-tf-transformations && rm -rf /var/lib/apt/lists/*
+RUN pip3 install --ignore-installed transforms3d
 
 # Build the workspace (build only needed packages)
 WORKDIR /home/ubuntu/ros2_ws
