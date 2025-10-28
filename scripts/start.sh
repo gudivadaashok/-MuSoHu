@@ -104,21 +104,15 @@ elif [ "$OS_TYPE" = "Linux" ]; then
     cat > docker-compose.override.yml <<'EOF'
 services:
   ros2_vnc:
+    privileged: true
     devices:
-      - /dev:/dev
       - /dev/snd:/dev/snd
       - /dev/bus/usb:/dev/bus/usb
 EOF
     
     if [ "$HAS_GPU" = true ]; then
         cat >> docker-compose.override.yml <<'EOF'
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+    runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
