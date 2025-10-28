@@ -23,15 +23,14 @@ RUN apt-get update && apt-get install -y \
 
 # Install Python audio packages (build PyAudio from source for compatibility)
 RUN pip3 install --upgrade pip && \
-    pip3 install pyusb click pixel-ring spidev && \
-    pip3 install --no-cache-dir --upgrade pyaudio
+    pip3 install --no-cache-dir pyusb click pixel-ring spidev && \
+    pip3 install --no-cache-dir pyaudio
 
 # Clone diagnostic_updater from source
 RUN mkdir -p /tmp/ros2_deps/src && cd /tmp/ros2_deps/src && \
     git clone https://github.com/ros/diagnostics.git && \
     cd /tmp/ros2_deps && \
-    /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --symlink-install" && \
-    /bin/bash -c "source /tmp/ros2_deps/install/setup.bash && echo 'source /tmp/ros2_deps/install/setup.bash' >> /opt/ros/humble/setup.bash"
+    /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --symlink-install"
 
 # Set up workspace for ReSpeaker and audio drivers
 RUN mkdir -p /home/ubuntu/ros2_ws/src
@@ -46,19 +45,21 @@ RUN git clone https://github.com/hcrlab/respeaker_ros.git
 # Copy udev rules for ReSpeaker
 RUN cp /home/ubuntu/ros2_ws/src/respeaker_ros/config/*.rules /etc/udev/rules.d/ || true
 
-# Install Python dependencies for ReSpeaker
-RUN pip3 install --upgrade pyusb click pyaudio==0.2.14 pixel-ring
+# Install Python dependencies for ReSpeaker (using consistent versions)
+RUN pip3 install --no-cache-dir pyusb click pyaudio pixel-ring
 
 # Install additional ROS2 dependencies and fix transforms3d compatibility
 RUN apt-get update && apt-get install -y ros-humble-tf-transformations && rm -rf /var/lib/apt/lists/*
-RUN pip3 install --ignore-installed transforms3d
+RUN pip3 install --no-cache-dir --ignore-installed transforms3d
 
 # Build the workspace (build only needed packages)
 WORKDIR /home/ubuntu/ros2_ws
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && source /tmp/ros2_deps/install/setup.bash && colcon build --symlink-install --packages-select audio_common_msgs respeaker_ros audio_capture audio_play"
 
-# Source the workspace in bashrc
-RUN echo "source /home/ubuntu/ros2_ws/install/setup.bash" >> /home/ubuntu/.bashrc
+# Source the workspace in bashrc in correct order
+RUN echo "source /opt/ros/humble/setup.bash" >> /home/ubuntu/.bashrc && \
+    echo "source /tmp/ros2_deps/install/setup.bash" >> /home/ubuntu/.bashrc && \
+    echo "source /home/ubuntu/ros2_ws/install/setup.bash" >> /home/ubuntu/.bashrc
 
 WORKDIR /workspace
 

@@ -12,7 +12,7 @@ services:
       context: .
       dockerfile: Dockerfile.ros2
     container_name: ros2_vnc
-    hostname: robotixx
+    # hostname: robotixx
     ports:
       - "6080:80"
     volumes:
