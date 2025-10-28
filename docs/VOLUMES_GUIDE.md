@@ -112,10 +112,10 @@ volumes:
 ### **Setup & Initialization:**
 ```bash
 # Initialize volume directories
-./setup-volumes.sh
+./scripts/setup-volumes.sh
 
 # Start with volume setup
-./start.sh
+./scripts/start.sh
 ```
 
 ### **Container Operations:**

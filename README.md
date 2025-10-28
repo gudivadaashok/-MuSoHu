@@ -28,7 +28,7 @@ git clone https://github.com/gudivadaashok/-MuSoHu.git
 cd -MuSoHu
 
 # Start with Docker (recommended)
-./start.sh
+./scripts/start.sh
 
 # Or manually with Docker Compose
 docker-compose up -d

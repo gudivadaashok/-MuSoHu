@@ -8,7 +8,7 @@ Make sure Docker Desktop is running on your system.
 ### 2. Run the Application
 ```bash
 # Option A: Use the startup script (recommended)
-./start.sh
+./scripts/start.sh
 
 # Option B: Manual Docker Compose
 docker-compose up -d --build
@@ -72,7 +72,7 @@ docker-compose up -d --build
 open -a Docker
 
 # Wait for Docker to start, then run:
-./start.sh
+./scripts/start.sh
 ```
 
 ### Port Conflicts

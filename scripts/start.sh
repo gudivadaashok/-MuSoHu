@@ -25,7 +25,11 @@ if ! command -v docker-compose > /dev/null 2>&1; then
 fi
 
 echo "�️  Setting up Docker volumes..."
-./setup-volumes.sh > /dev/null 2>&1
+# Create bind mount directories if they don't exist
+if [ ! -d "$HOME/Desktop/Docker-Volumns" ]; then
+    echo "📁 Setting up Docker volume directories..."
+    ./scripts/setup-volumes.sh > /dev/null 2>&1
+fi
 
 echo "�🔧 Building and starting services..."
 
