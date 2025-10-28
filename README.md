@@ -54,5 +54,14 @@ card 0: ArrayUAC10 [ReSpeaker 4 Mic Array (UAC1.0)], device 0: USB Audio [USB Au
 ```
 
 
+## Additional Documentation
+
+## GitHub Repositories for each Driver
+- [witmotion_ros2](https://github.com/ioio2995/witmotion_ros2.git)
+https://wit-motion.gitbook.io/witmotion-sdk/wit-standard-protocol/sdk/ros-python-introduction
+- [zed-ros2-wrapper](https://github.com/stereolabs/zed-ros2-wrapper.git)
+- [respeaker_ros2](https://github.com/hcrlab/respeaker_ros.git)
+- [LiDAR Robosense H32F70](https://github.com/RoboSense-LiDAR/rslidar_sdk.git)
+
 
 
