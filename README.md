@@ -53,6 +53,18 @@ Expected output should show:
 card 0: ArrayUAC10 [ReSpeaker 4 Mic Array (UAC1.0)], device 0: USB Audio [USB Audio]
 ```
 
+To launch the ReSpeaker ROS2 node (after the container is built with audio drivers):
+```bash
+docker exec -it ros2_vnc bash
+source /home/ubuntu/ros2_ws/install/setup.bash
+ros2 launch respeaker_ros2 respeaker.launch.py
+```
+
+To test audio recording:
+```bash
+docker exec -it ros2_vnc arecord -D plughw:0,0 -f S16_LE -r 16000 -c 4 test.wav
+```
+
 
 ## Additional Documentation
 

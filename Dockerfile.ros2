@@ -1,5 +1,66 @@
 FROM tiryoh/ros2-desktop-vnc:humble
 
+# Install audio dependencies and ROS2 packages
+RUN apt-get update && apt-get install -y \
+    portaudio19-dev \
+    libasound2-dev \
+    libportaudio2 \
+    libportaudiocpp0 \
+    ffmpeg \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    libgstreamer-plugins-good1.0-dev \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-tools \
+    python3-pip \
+    python3-gst-1.0 \
+    ros-humble-tf-transformations \
+    python3-transforms3d \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python audio packages (build PyAudio from source for compatibility)
+RUN pip3 install --upgrade pip && \
+    pip3 install pyusb click pixel-ring spidev && \
+    pip3 install --no-cache-dir --upgrade pyaudio
+
+# Clone diagnostic_updater from source
+RUN mkdir -p /tmp/ros2_deps/src && cd /tmp/ros2_deps/src && \
+    git clone https://github.com/ros/diagnostics.git && \
+    cd /tmp/ros2_deps && \
+    /bin/bash -c "source /opt/ros/humble/setup.bash && colcon build --symlink-install" && \
+    /bin/bash -c "source /tmp/ros2_deps/install/setup.bash && echo 'source /tmp/ros2_deps/install/setup.bash' >> /opt/ros/humble/setup.bash"
+
+# Set up workspace for ReSpeaker and audio drivers
+RUN mkdir -p /home/ubuntu/ros2_ws/src
+WORKDIR /home/ubuntu/ros2_ws/src
+
+# Clone audio_common for ROS2
+RUN git clone -b ros2 https://github.com/ros-drivers/audio_common.git
+
+# Clone respeaker_ros
+RUN git clone https://github.com/hcrlab/respeaker_ros.git
+
+# Copy udev rules for ReSpeaker
+RUN cp /home/ubuntu/ros2_ws/src/respeaker_ros/config/*.rules /etc/udev/rules.d/ || true
+
+# Install Python dependencies for ReSpeaker
+RUN pip3 install --upgrade pyusb click pyaudio==0.2.14 pixel-ring
+
+# Install additional ROS2 dependencies
+RUN apt-get update && apt-get install -y ros-humble-tf-transformations python3-transforms3d && rm -rf /var/lib/apt/lists/*
+
+# Build the workspace (build only needed packages)
+WORKDIR /home/ubuntu/ros2_ws
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && source /tmp/ros2_deps/install/setup.bash && colcon build --symlink-install --packages-select audio_common_msgs respeaker_ros audio_capture audio_play"
+
+# Source the workspace in bashrc
+RUN echo "source /home/ubuntu/ros2_ws/install/setup.bash" >> /home/ubuntu/.bashrc
+
+WORKDIR /workspace
+
 EXPOSE 80 5901
 
 CMD ["/usr/local/bin/vnc-startup.sh"]
