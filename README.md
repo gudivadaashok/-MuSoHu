@@ -13,6 +13,8 @@ For detailed setup and usage instructions, see our comprehensive guides:
 - **🐳 [Docker Setup Guide](docs/DOCKER_GUIDE.md)** - Complete Docker containerization setup
 - **📖 [Docker Setup Documentation](docs/docker-setup.md)** - Detailed Docker configuration and troubleshooting
 
+[➡️ Read the full Docker Guide here](docs/DOCKER_GUIDE.md)
+
 ## Getting Started
 
 ### Prerequisites
