@@ -66,6 +66,18 @@ docker exec ros2_vnc tail -f /tmp/rslidar.log
 docker exec ros2_vnc tail -f /tmp/witmotion.log
 ```
 
+**Visualize Sensors in RViz2:**
+```bash
+# Launch RViz2 with pre-configured sensor visualization
+docker exec -d ros2_vnc /usr/local/bin/launch-rviz.sh
+
+# Then access via VNC: http://localhost:6080
+# RViz2 will show:
+#   - LiDAR point cloud (/rslidar_points)
+#   - IMU orientation axes
+#   - TF transforms
+```
+
 ### Network Configuration
 
 **Container Network**: `ros2_network` (bridge mode)

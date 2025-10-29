@@ -90,7 +90,11 @@ COPY scripts/ros2-sensors.conf /etc/supervisor/conf.d/ros2-sensors.conf
 # Copy helper scripts
 COPY scripts/vnc-startup.sh /usr/local/bin/vnc-startup.sh
 COPY scripts/check-sensors.sh /usr/local/bin/check-sensors.sh
-RUN chmod +x /usr/local/bin/vnc-startup.sh /usr/local/bin/check-sensors.sh
+COPY scripts/launch-rviz.sh /usr/local/bin/launch-rviz.sh
+RUN chmod +x /usr/local/bin/vnc-startup.sh /usr/local/bin/check-sensors.sh /usr/local/bin/launch-rviz.sh
+
+# Copy RViz configuration
+COPY scripts/musohu_sensors.rviz /usr/local/share/musohu_sensors.rviz
 
 WORKDIR /workspace
 
