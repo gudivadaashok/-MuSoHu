@@ -13,8 +13,8 @@ services:
       dockerfile: Dockerfile.ros2
     container_name: ros2_vnc
     # hostname: robotixx
-    ports:
-      - "6080:80"
+    # ports: # Disabled when using host network mode
+    #   - "6080:80"
     volumes:
       - .:/workspace
       - ~/Desktop/Docker-Volumns/ros2_workspace:/home/ubuntu/ros2_ws
@@ -27,8 +27,8 @@ services:
     environment:
       - DISPLAY=:1
       - VNC_PASSWORD=ubuntu
-    networks:
-      - ros2_network
+    # networks: # Disabled when using host network mode (set in override)
+    #   - ros2_network
 
   web_app:
     build:

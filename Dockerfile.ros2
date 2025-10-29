@@ -1,6 +1,6 @@
 FROM tiryoh/ros2-desktop-vnc:humble
 
-# Install audio dependencies and ROS2 packages
+# Install audio dependencies, LiDAR dependencies, and ROS2 packages
 RUN apt-get update && apt-get install -y \
     portaudio19-dev \
     libasound2-dev \
@@ -18,6 +18,8 @@ RUN apt-get update && apt-get install -y \
     python3-gst-1.0 \
     ros-humble-tf-transformations \
     python3-transforms3d \
+    libyaml-cpp-dev \
+    libpcap-dev \
     git \
     && rm -rf /var/lib/apt/lists/*
 
@@ -42,6 +44,18 @@ RUN git clone -b ros2 https://github.com/ros-drivers/audio_common.git
 # Clone respeaker_ros
 RUN git clone https://github.com/hcrlab/respeaker_ros.git
 
+# Clone RoboSense LiDAR SDK and message definitions
+RUN git clone https://github.com/RoboSense-LiDAR/rslidar_sdk.git && \
+    cd rslidar_sdk && \
+    git submodule init && \
+    git submodule update
+
+# Clone RoboSense LiDAR ROS2 message definitions
+RUN git clone https://github.com/RoboSense-LiDAR/rslidar_msg.git
+
+# Configure LiDAR type to RSHELIOS (Helios 32)
+RUN sed -i 's/lidar_type: RSM1/lidar_type: RSHELIOS/' /home/ubuntu/ros2_ws/src/rslidar_sdk/config/config.yaml
+
 # Copy udev rules for ReSpeaker
 RUN cp /home/ubuntu/ros2_ws/src/respeaker_ros/config/*.rules /etc/udev/rules.d/ || true
 
@@ -52,14 +66,18 @@ RUN pip3 install --no-cache-dir pyusb click pyaudio pixel-ring
 RUN apt-get update && apt-get install -y ros-humble-tf-transformations && rm -rf /var/lib/apt/lists/*
 RUN pip3 install --no-cache-dir --ignore-installed transforms3d
 
-# Build the workspace (build only needed packages)
+# Build the workspace (build audio and LiDAR packages)
 WORKDIR /home/ubuntu/ros2_ws
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash && source /tmp/ros2_deps/install/setup.bash && colcon build --symlink-install --packages-select audio_common_msgs respeaker_ros audio_capture audio_play"
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && source /tmp/ros2_deps/install/setup.bash && colcon build --symlink-install --packages-select audio_common_msgs respeaker_ros audio_capture audio_play rslidar_msg rslidar_sdk"
 
 # Source the workspace in bashrc in correct order
 RUN echo "source /opt/ros/humble/setup.bash" >> /home/ubuntu/.bashrc && \
     echo "source /tmp/ros2_deps/install/setup.bash" >> /home/ubuntu/.bashrc && \
     echo "source /home/ubuntu/ros2_ws/install/setup.bash" >> /home/ubuntu/.bashrc
+
+# Copy startup scripts
+COPY scripts/vnc-startup.sh /usr/local/bin/vnc-startup.sh
+RUN chmod +x /usr/local/bin/vnc-startup.sh
 
 WORKDIR /workspace
 
