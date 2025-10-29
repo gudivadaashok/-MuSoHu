@@ -1,6 +1,6 @@
 FROM tiryoh/ros2-desktop-vnc:humble
 
-# Install audio dependencies, LiDAR dependencies, and ROS2 packages
+# Install audio dependencies, LiDAR dependencies, ZED camera dependencies, and ROS2 packages
 RUN apt-get update && apt-get install -y \
     portaudio19-dev \
     libasound2-dev \
@@ -22,6 +22,12 @@ RUN apt-get update && apt-get install -y \
     libpcap-dev \
     libasio-dev \
     git \
+    wget \
+    lsb-release \
+    ros-humble-image-transport \
+    ros-humble-image-transport-plugins \
+    ros-humble-diagnostic-updater \
+    ros-humble-xacro \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python audio packages (build PyAudio from source for compatibility)
@@ -57,6 +63,10 @@ RUN git clone https://github.com/RoboSense-LiDAR/rslidar_msg.git
 # Clone Witmotion IMU ROS2 driver
 WORKDIR /home/ubuntu/ros2_ws/src
 RUN git clone https://github.com/ioio2995/witmotion_ros2.git
+
+# Clone ZED ROS2 Wrapper (Note: Requires ZED SDK to be installed on host)
+RUN git clone --recursive https://github.com/stereolabs/zed-ros2-wrapper.git || echo "ZED wrapper will be cloned later if SDK is available"
+
 WORKDIR /home/ubuntu/ros2_ws
 
 # Configure LiDAR type to RSHELIOS (Helios 32)
@@ -75,9 +85,11 @@ RUN pip3 install --no-cache-dir pyusb click pyaudio pixel-ring
 RUN apt-get update && apt-get install -y ros-humble-tf-transformations && rm -rf /var/lib/apt/lists/*
 RUN pip3 install --no-cache-dir --ignore-installed transforms3d
 
-# Build the workspace (build audio, LiDAR, and IMU packages)
+# Build the workspace (build audio, LiDAR, IMU, and ZED packages if SDK available)
 WORKDIR /home/ubuntu/ros2_ws
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash && source /tmp/ros2_deps/install/setup.bash && colcon build --symlink-install --packages-select audio_common_msgs respeaker_ros audio_capture audio_play rslidar_msg rslidar_sdk witmotion_ros2"
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && source /tmp/ros2_deps/install/setup.bash && \
+    colcon build --symlink-install --packages-select audio_common_msgs respeaker_ros audio_capture audio_play rslidar_msg rslidar_sdk witmotion_ros2 || \
+    colcon build --symlink-install --packages-select audio_common_msgs respeaker_ros audio_capture audio_play rslidar_msg rslidar_sdk witmotion_ros2 zed_wrapper zed_components"
 
 # Source the workspace in bashrc in correct order
 RUN echo "source /opt/ros/humble/setup.bash" >> /home/ubuntu/.bashrc && \
@@ -91,7 +103,8 @@ COPY scripts/ros2-sensors.conf /etc/supervisor/conf.d/ros2-sensors.conf
 COPY scripts/vnc-startup.sh /usr/local/bin/vnc-startup.sh
 COPY scripts/check-sensors.sh /usr/local/bin/check-sensors.sh
 COPY scripts/launch-rviz.sh /usr/local/bin/launch-rviz.sh
-RUN chmod +x /usr/local/bin/vnc-startup.sh /usr/local/bin/check-sensors.sh /usr/local/bin/launch-rviz.sh
+COPY scripts/launch-zed.sh /usr/local/bin/launch-zed.sh
+RUN chmod +x /usr/local/bin/vnc-startup.sh /usr/local/bin/check-sensors.sh /usr/local/bin/launch-rviz.sh /usr/local/bin/launch-zed.sh
 
 # Copy RViz configuration
 COPY scripts/musohu_sensors.rviz /usr/local/share/musohu_sensors.rviz
