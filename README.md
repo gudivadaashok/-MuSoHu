@@ -40,6 +40,19 @@ docker-compose up -d
 - **ROS2 VNC Desktop**: http://localhost:6080 (password: `ubuntu`, hostname: `robotixx`)
 - **Web Interface**: http://localhost:5001 (hostname: `robotixx-webapp`)
 
+### Network Configuration
+
+**Container Network**: `ros2_network` (bridge mode)
+
+**Port Forwarding**:
+- `6080:80` - noVNC web interface
+- `5901:5901` - VNC server (direct access)
+- `6699:6699/udp` - RoboSense LiDAR MSOP (Main Stream Output Protocol)
+- `7788:7788/udp` - RoboSense LiDAR DIFOP (Device Information Output Protocol)
+- `5001:5001` - Web Application
+
+**Note**: The ROS2 container uses port forwarding instead of host networking to maintain VNC compatibility while allowing LiDAR UDP packet reception.
+
 ### Testing Hardware Devices
 
 #### ReSpeaker 4 Mic Array

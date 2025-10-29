@@ -1,7 +1,12 @@
 services:
   ros2_vnc:
     privileged: true
-    network_mode: "host"  # Required for LiDAR network access
+    # network_mode: "host"  # DISABLED: Conflicts with VNC - Use port forwarding instead
+    ports:
+      - "6080:80"      # noVNC web interface
+      - "5901:5901"    # VNC server
+      - "6699:6699/udp"  # LiDAR MSOP port
+      - "7788:7788/udp"  # LiDAR DIFOP port
     devices:
       - /dev/snd:/dev/snd
       - /dev/bus/usb:/dev/bus/usb
@@ -10,5 +15,6 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
       - DISPLAY=:1
-    # Note: network_mode: host conflicts with 'networks' and 'ports' in base docker-compose.yml
-    # The container will use host networking directly
+    networks:
+      - ros2_network
+    # Note: Using port forwarding for LiDAR instead of host networking to allow VNC to work
