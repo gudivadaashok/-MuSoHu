@@ -131,6 +131,44 @@ source /home/ubuntu/ros2_ws/install/setup.bash
 rviz2 -d /home/ubuntu/.rviz2/lidar.rviz
 ```
 
+#### Witmotion IMU (3-Axis Sensor)
+
+**Device Information:**
+- **Driver**: [witmotion_ros2](https://github.com/ioio2995/witmotion_ros2)
+- **Serial Port**: `/dev/ttyUSB0` or `/dev/ttyUSB1` (check with `ls /dev/ttyUSB*`)
+- **Baud Rate**: 115200
+- **Update Rate**: 50 Hz
+- **Frame ID**: `base_link`
+
+**Published Topics:**
+- `/witmotion_node/imu` - IMU data (sensor_msgs/Imu)
+- `/witmotion_node/imu_temperature` - Temperature
+- `/witmotion_node/magnetometer` - Magnetic field
+- `/witmotion_node/orientation` - Orientation (Quaternion)
+- Additional topics for GPS, barometer, altitude (if supported by sensor)
+
+To launch the Witmotion IMU node:
+```bash
+docker exec -it ros2_vnc bash
+source /home/ubuntu/ros2_ws/install/setup.bash
+ros2 launch witmotion_ros2 witmotion_launch.py
+```
+
+Or run directly with custom parameters:
+```bash
+ros2 run witmotion_ros2 witmotion_node --ros-args \
+  -p port:=/dev/ttyUSB0 \
+  -p baud_rate:=115200 \
+  -p update_rate:=50.0 \
+  -p frame_id:=base_link \
+  -p topic_name:=/witmotion
+```
+
+To check IMU data:
+```bash
+docker exec -it ros2_vnc bash -c "source /home/ubuntu/ros2_ws/install/setup.bash && ros2 topic echo /witmotion_node/imu"
+```
+
 
 ## Additional Documentation
 
