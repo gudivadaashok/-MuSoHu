@@ -55,10 +55,15 @@ RUN git clone https://github.com/RoboSense-LiDAR/rslidar_sdk.git && \
 RUN git clone https://github.com/RoboSense-LiDAR/rslidar_msg.git
 
 # Clone Witmotion IMU ROS2 driver
+WORKDIR /home/ubuntu/ros2_ws/src
 RUN git clone https://github.com/ioio2995/witmotion_ros2.git
+WORKDIR /home/ubuntu/ros2_ws
 
 # Configure LiDAR type to RSHELIOS (Helios 32)
 RUN sed -i 's/lidar_type: RSM1/lidar_type: RSHELIOS/' /home/ubuntu/ros2_ws/src/rslidar_sdk/config/config.yaml
+
+# Configure Witmotion IMU serial port to /dev/ttyUSB0
+RUN sed -i 's|/dev/ttyUSB1|/dev/ttyUSB0|' /home/ubuntu/ros2_ws/src/witmotion_ros2/config/witmotion.yaml
 
 # Copy udev rules for ReSpeaker
 RUN cp /home/ubuntu/ros2_ws/src/respeaker_ros/config/*.rules /etc/udev/rules.d/ || true
@@ -79,12 +84,16 @@ RUN echo "source /opt/ros/humble/setup.bash" >> /home/ubuntu/.bashrc && \
     echo "source /tmp/ros2_deps/install/setup.bash" >> /home/ubuntu/.bashrc && \
     echo "source /home/ubuntu/ros2_ws/install/setup.bash" >> /home/ubuntu/.bashrc
 
-# Copy startup scripts
+# Copy supervisor config for ROS2 sensor nodes
+COPY scripts/ros2-sensors.conf /etc/supervisor/conf.d/ros2-sensors.conf
+
+# Copy helper scripts
 COPY scripts/vnc-startup.sh /usr/local/bin/vnc-startup.sh
-RUN chmod +x /usr/local/bin/vnc-startup.sh
+COPY scripts/check-sensors.sh /usr/local/bin/check-sensors.sh
+RUN chmod +x /usr/local/bin/vnc-startup.sh /usr/local/bin/check-sensors.sh
 
 WORKDIR /workspace
 
 EXPOSE 80 5901
 
-CMD ["/usr/local/bin/vnc-startup.sh"]
+# Use default CMD from base image (supervisord)

@@ -10,6 +10,7 @@ services:
     devices:
       - /dev/snd:/dev/snd
       - /dev/bus/usb:/dev/bus/usb
+      - /dev/ttyUSB0:/dev/ttyUSB0
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all

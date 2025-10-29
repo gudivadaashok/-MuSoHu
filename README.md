@@ -40,6 +40,32 @@ docker-compose up -d
 - **ROS2 VNC Desktop**: http://localhost:6080 (password: `ubuntu`, hostname: `robotixx`)
 - **Web Interface**: http://localhost:5001 (hostname: `robotixx-webapp`)
 
+### Helper Scripts
+
+**Check System Status:**
+```bash
+docker exec ros2_vnc /usr/local/bin/vnc-startup.sh
+```
+Shows supervisor status, active topics, and access points.
+
+**Check Sensor Health:**
+```bash
+docker exec ros2_vnc /usr/local/bin/check-sensors.sh
+```
+Displays real-time sensor publish rates for all 3 sensors.
+
+**View Sensor Logs:**
+```bash
+# ReSpeaker
+docker exec ros2_vnc tail -f /tmp/respeaker.log
+
+# LiDAR
+docker exec ros2_vnc tail -f /tmp/rslidar.log
+
+# IMU
+docker exec ros2_vnc tail -f /tmp/witmotion.log
+```
+
 ### Network Configuration
 
 **Container Network**: `ros2_network` (bridge mode)
@@ -167,6 +193,58 @@ ros2 run witmotion_ros2 witmotion_node --ros-args \
 To check IMU data:
 ```bash
 docker exec -it ros2_vnc bash -c "source /home/ubuntu/ros2_ws/install/setup.bash && ros2 topic echo /witmotion_node/imu"
+```
+
+### Troubleshooting: CH340 Driver Installation (Jetson)
+
+If the IMU is connected but `/dev/ttyUSB0` doesn't appear, the CH340/CH341 USB-to-serial driver may be missing from the Jetson kernel.
+
+**Symptoms:**
+- `lsusb` shows device `1a86:7523 QinHeng Electronics CH340 serial converter`
+- No `/dev/ttyUSB*` devices available
+- `modprobe ch341` returns "module not found"
+
+**Solution - Option 2: Compile driver from source**
+
+```bash
+# Clone the driver repository
+git clone https://github.com/juliagoda/CH341SER.git /tmp/CH341SER
+cd /tmp/CH341SER
+
+# Compile the driver
+make
+
+# Load the driver into the kernel
+sudo make load
+
+# Optional: Install permanently (survives reboots)
+sudo make install
+```
+
+**Note:** The `brltty` (braille display) service may claim the CH340 device. Disable it:
+```bash
+sudo systemctl stop brltty.service
+sudo systemctl disable brltty.service
+sudo killall brltty
+```
+
+After loading the driver, unbind/rebind the USB device to create `/dev/ttyUSB0`:
+```bash
+# Find USB port (usually 1-2.3 for device 006)
+lsusb  # Note the Bus and Device number
+
+# Unbind and rebind (replace 1-2.3 with your port)
+echo "1-2.3" | sudo tee /sys/bus/usb/drivers/usb/unbind
+echo "1-2.3" | sudo tee /sys/bus/usb/drivers/usb/bind
+
+# Verify device appeared
+ls -la /dev/ttyUSB0
+```
+
+Once `/dev/ttyUSB0` exists, restart the Docker container to pass the device:
+```bash
+docker compose down
+docker compose up -d
 ```
 
 
