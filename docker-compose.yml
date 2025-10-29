@@ -20,6 +20,10 @@ services:
       - ~/Desktop/Docker-Volumns/ros2_workspace:/home/ubuntu/ros2_ws
       - ~/Desktop/Docker-Volumns/ros2_logs:/home/ubuntu/.ros/log
       - ~/Desktop/Docker-Volumns/user_data:/home/ubuntu/user_data
+      # Mount ZED SDK from host (read-only)
+      - /usr/local/zed:/usr/local/zed:ro
+      # Mount CUDA from host for ZED compilation
+      - /usr/local/cuda:/usr/local/cuda:ro
     shm_size: 512m
     security_opt:
       - seccomp:unconfined
@@ -27,6 +31,11 @@ services:
     environment:
       - DISPLAY=:1
       - VNC_PASSWORD=ubuntu
+      - ZED_CAMERA_MODEL=zed2i
+      - LD_LIBRARY_PATH=/usr/local/zed/lib:$LD_LIBRARY_PATH
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - ros2_network
 
