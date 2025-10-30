@@ -57,7 +57,7 @@ if [ -e /dev/ttyUSB0 ]; then
         "ros2 run witmotion_ros2 witmotion_node --ros-args -p port:=/dev/ttyUSB0" \
         "$LOG_DIR/witmotion.log"
 else
-    echo "⚠️  WARNING: /dev/ttyUSB0 not found, skipping WitMotion IMU"
+    echo "WARNING: /dev/ttyUSB0 not found, skipping WitMotion IMU"
 fi
 
 # 4. Start ZED Camera (if available)

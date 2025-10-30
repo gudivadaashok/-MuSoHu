@@ -19,6 +19,7 @@ services:
       # ZED camera devices (video devices for camera)
       - /dev/video0:/dev/video0
       - /dev/video1:/dev/video1
+      - /dev:/dev
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all

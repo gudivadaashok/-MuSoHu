@@ -526,5 +526,13 @@ https://wit-motion.gitbook.io/witmotion-sdk/wit-standard-protocol/sdk/ros-python
 - [respeaker_ros2](https://github.com/hcrlab/respeaker_ros.git)
 - [LiDAR Robosense H32F70](https://github.com/RoboSense-LiDAR/rslidar_sdk.git)
 
+## TODO ##
+# Set the IP address for the jetson ethernet to fixed ipv4 (192.168.1.102/24) and ipv6 to disabled 
+
+#https://download.stereolabs.com/zedsdk/5.1/l4t36.4/jetsons_gl=1*lvwc0m*_gcl_au*MTM3NzgxNjcxLjE3NjE3NzYxNjk
 
 
+zed_msgs
+geographic_msgs
+backward-ros
+rosdep install --from-paths src --ignore-src -r -y

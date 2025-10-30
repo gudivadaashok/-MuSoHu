@@ -7,6 +7,8 @@ echo ""
 echo "📊 Checking ROS2 Sensor Status..."
 echo ""
 
+sudo chown -R $USER:$USER /usr/local/lib/python3.10/dist-packages/
+
 # Source ROS2 environment
 source /opt/ros/humble/setup.bash
 source /tmp/ros2_deps/install/setup.bash
