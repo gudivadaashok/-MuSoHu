@@ -101,15 +101,17 @@ RUN apt-get update && apt-get install -y zstd wget && \
     chmod +x /tmp/ZED_SDK_Linux.run && \
     /tmp/ZED_SDK_Linux.run silent
 
-
 # Build the workspace (build audio, LiDAR, IMU, and ZED packages if SDK available)
 WORKDIR /home/ubuntu/ros2_ws
+
+RUN apt-get install -y ros-humble-rviz2 ros-humble-image-* ros-humble-imu-*
+RUN apt-get install -y ros-humble-image-transport-plugins ros-humble-sensor-msgs
+
+RUN rosdep install --from-paths src --ignore-src -r -y
 
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && source /tmp/ros2_deps/install/setup.bash && \
     colcon build --symlink-install --packages-select audio_common_msgs respeaker_ros audio_capture audio_play rslidar_msg rslidar_sdk witmotion_ros2 || \
     colcon build --symlink-install --packages-select audio_common_msgs respeaker_ros audio_capture audio_play rslidar_msg rslidar_sdk witmotion_ros2 zed_wrapper zed_components"
-
-RUN rosdep install --from-paths src --ignore-src -r -y
 
 # Source the workspace in bashrc in correct order
 RUN echo "source /opt/ros/humble/setup.bash" >> /home/ubuntu/.bashrc && \

@@ -12,14 +12,18 @@ services:
       - /usr/local/zed:/usr/local/zed:ro
       # ZED AI models cache
       - ~/.zed_ai_models:/usr/local/zed/resources
-    devices:
-      - /dev/snd:/dev/snd
-      - /dev/bus/usb:/dev/bus/usb
-      - /dev/ttyUSB0:/dev/ttyUSB0
-      # ZED camera devices (video devices for camera)
-      - /dev/video0:/dev/video0
-      - /dev/video1:/dev/video1
       - /dev:/dev
+      - /dev/shm:/dev/shm
+      - /usr/local/zed/resources/:/usr/local/zed/resources/
+      - /usr/local/zed/settings/:/usr/local/zed/settings/
+    #devices:
+      # - /dev/snd:/dev/snd
+      # - /dev/bus/usb:/dev/bus/usb
+      # - /dev/ttyUSB0:/dev/ttyUSB0
+      # # ZED camera devices (video devices for camera)
+      # - /dev/video0:/dev/video0
+      # - /dev/video1:/dev/video1
+
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
