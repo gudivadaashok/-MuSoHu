@@ -526,13 +526,34 @@ https://wit-motion.gitbook.io/witmotion-sdk/wit-standard-protocol/sdk/ros-python
 - [respeaker_ros2](https://github.com/hcrlab/respeaker_ros.git)
 - [LiDAR Robosense H32F70](https://github.com/RoboSense-LiDAR/rslidar_sdk.git)
 
-## TODO ##
-# Set the IP address for the jetson ethernet to fixed ipv4 (192.168.1.102/24) and ipv6 to disabled 
+## TODO
+- Set the IP address for the jetson ethernet to fixed ipv4 (192.168.1.102/24) and ipv6 to disabled 
+- Install ZED SDK: https://download.stereolabs.com/zedsdk/5.1/l4t36.4/jetsons
+- Install required packages:
+  - zed_msgs
+  - geographic_msgs
+  - backward-ros
+  - Run: `rosdep install --from-paths src --ignore-src -r -y`
+- Install rviz IMU plugin and image transform plugin for better IMU and image visualization
 
-#https://download.stereolabs.com/zedsdk/5.1/l4t36.4/jetsons_gl=1*lvwc0m*_gcl_au*MTM3NzgxNjcxLjE3NjE3NzYxNjk
 
+## WiFi Logic 
 
-zed_msgs
-geographic_msgs
-backward-ros
-rosdep install --from-paths src --ignore-src -r -y
+```
+Check if known SSID is available
+    |
+    |-- Yes --> Connect to known SSID
+    |              |
+    |              |-- Success --> Done
+    |              |
+    |              |-- Fail --> Start AP mode
+    |
+    |-- No --> Start Fallback to Hotspot/AP mode
+
+Web Interface:
+- should show current WiFi status
+- allow user to scan for networks
+- allow user to enter credentials for known networks
+- allow user to switch between client and AP mode
+
+```
