@@ -594,6 +594,16 @@ Web Interface:
 
 For complete WiFi hotspot setup and management instructions, see the **[Hotspot Guide](docs/Hotspot.md)**.
 
+**Network Credentials:**
+- **SSID:** `Robotixx_MuSoHu`
+- **Password:** `Robotixx`
+
+**Setup DNS (One-time):**
+```bash
+# Configure DNS for hostname resolution (required for http://robotixx:6080 to work)
+sudo bash /home/jetson/MuSoHu/scripts/hotspot/setup-hotspot-dns.sh
+```
+
 **Quick Start:**
 ```bash
 # Start hotspot manually
@@ -603,6 +613,6 @@ For complete WiFi hotspot setup and management instructions, see the **[Hotspot 
 sudo bash /home/jetson/MuSoHu/scripts/hotspot/setup-hotspot-service.sh
 ```
 
-**Network Credentials:**
-- **SSID:** `Robotixx_MuSoHu`
-- **Password:** `Robotixx`
+**Access URLs (when connected to hotspot):**
+- **Using hostname:** `http://robotixx:6080` (VNC) or `http://robotixx:5001` (Web)
+- **Using IP:** `http://10.42.0.1:6080` (VNC) or `http://10.42.0.1:5001` (Web)
