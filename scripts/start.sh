@@ -85,42 +85,24 @@ if ! docker compose version > /dev/null 2>&1; then
     fi
 fi
 
-# Check OS and create override file for Linux if needed
+# Check OS and display info
 if [ "$OS_TYPE" = "Darwin" ]; then
     echo ""
     echo "ℹ️  Running on macOS"
     echo "   GPU and device passthrough not available"
     echo ""
-    rm -f docker-compose.override.yml
 elif [ "$OS_TYPE" = "Linux" ]; then
-    echo "✅ Running on Linux - enabling hardware access"
+    echo "✅ Running on Linux - hardware access enabled"
     
-    HAS_GPU=false
     if command -v nvidia-smi > /dev/null 2>&1; then
         echo "🎮 NVIDIA GPU detected"
-        HAS_GPU=true
     fi
     
-    cat > docker-compose.override.yml <<'EOF'
-services:
-  ros2_vnc:
-    privileged: true
-    devices:
-      - /dev/snd:/dev/snd
-      - /dev/bus/usb:/dev/bus/usb
-EOF
-    
-    if [ "$HAS_GPU" = true ]; then
-        cat >> docker-compose.override.yml <<'EOF'
-    runtime: nvidia
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
-EOF
-    fi
-    
-    echo "   Hardware access configured"
+    echo "   All hardware devices configured in docker-compose.yml"
 fi
+
+# Remove any existing override file (all config is in main docker-compose.yml)
+rm -f docker-compose.override.yml
 
 # Create bind mount directories
 if [ ! -d "$HOME/Desktop/Docker-Volumns" ]; then
