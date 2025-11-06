@@ -51,6 +51,37 @@ docker exec -d ros2_vnc /usr/local/bin/launch-all-sensors.sh
 docker exec ros2_vnc /usr/local/bin/check-sensors.sh
 ```
 
+### Auto-Start on Boot (Jetson Only)
+
+To automatically start MuSoHu and WiFi hotspot on system boot:
+
+```bash
+# Install MuSoHu startup service (runs Docker containers)
+sudo bash /home/jetson/MuSoHu/scripts/setup-musohu-startup.sh
+
+# Install WiFi hotspot service (creates WiFi access point)
+sudo bash /home/jetson/MuSoHu/scripts/hotspot/setup-hotspot-service.sh
+```
+
+**Service Management:**
+```bash
+# Check status
+sudo systemctl status musohu-startup.service
+sudo systemctl status hotspot.service
+
+# View logs
+journalctl -u musohu-startup.service
+journalctl -u hotspot.service
+
+# Stop services
+sudo systemctl stop musohu-startup.service
+sudo systemctl stop hotspot.service
+
+# Disable auto-start
+sudo systemctl disable musohu-startup.service
+sudo systemctl disable hotspot.service
+```
+
 ### Access Applications
 - **ROS2 VNC Desktop**: http://localhost:6080 (password: `ubuntu`, hostname: `robotixx`)
 - **Web Interface**: http://localhost:5001 (hostname: `robotixx-webapp`)
