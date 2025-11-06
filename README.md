@@ -557,3 +557,21 @@ Web Interface:
 - allow user to switch between client and AP mode
 
 ```
+
+
+## WiFi Hotspot
+
+For complete WiFi hotspot setup and management instructions, see the **[Hotspot Guide](docs/Hotspot.md)**.
+
+**Quick Start:**
+```bash
+# Start hotspot manually
+./scripts/start-hotspot.sh
+
+# Auto-start on boot
+sudo bash /home/jetson/MuSoHu/scripts/setup-hotspot-service.sh
+```
+
+**Network Credentials:**
+- **SSID:** `Robotixx_MuSoHu`
+- **Password:** `Robotixx`

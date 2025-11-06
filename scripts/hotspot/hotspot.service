@@ -1,0 +1,13 @@
+[Unit]
+Description=Start Robotixx_MuSoHu WiFi Hotspot at boot
+After=network.target NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/home/jetson/MuSoHu/scripts/start-hotspot.sh
+RemainAfterExit=yes
+User=root
+
+[Install]
+WantedBy=multi-user.target

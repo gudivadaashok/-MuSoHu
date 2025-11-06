@@ -1,53 +1,151 @@
-To start the Robotixx_MuSoHu hotspot with the network name "Robotixx_MuSoHu" automatically on every restart, you should create a systemd service that runs the hotspot command at boot.
+# WiFi Hotspot Setup Guide
 
-Here’s what you need to do on your Jetson:
+This guide explains how to set up and manage the Robotixx_MuSoHu WiFi hotspot on your Jetson device.
 
+## Network Credentials
 
-### 1. Create a script to start the hotspot
-Save this as `/usr/local/bin/start_hotspot.sh`:
+![WiFi Hotspot](images/Wi-Fi_Hotspot.png)
+
+- **SSID:** `Robotixx_MuSoHu`
+- **Password:** `Robotixx`
+- **Interface:** `wlP1p1s0`
+
+## Manual Hotspot Start
+
+Start the hotspot manually using the provided script:
+
 ```bash
-#!/bin/bash
-lsof -i :8080
+# Start hotspot manually
+./scripts/start-hotspot.sh
+```
+
+Or use the direct nmcli command:
+
+```bash
 nmcli dev wifi hotspot ifname wlP1p1s0 ssid Robotixx_MuSoHu password Robotixx
-python3 /home/jetson/git/simple_web_server/simple_web_server.py &
 ```
 
-Make the script executable:
+To stop the hotspot:
+
 ```bash
-sudo chmod +x /usr/local/bin/start_hotspot.sh
+nmcli connection down Hotspot
 ```
 
-### 2. Create a systemd service file
-Save this as `/etc/systemd/system/hotspot.service`:
-```ini
-[Unit]
-Description=Start Robotixx_MuSoHu Hotspot at boot
-After=network.target
+## Auto-Start Hotspot on Boot
 
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/start_hotspot.sh
-RemainAfterExit=yes
+To configure the hotspot to start automatically when the Jetson boots:
 
-[Install]
-WantedBy=multi-user.target
-```
+### 1. Install and Enable the Service
 
-### 3. Enable the service to start at boot
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable hotspot.service
+# Install and enable hotspot service to start automatically on boot
+sudo bash /home/jetson/MuSoHu/scripts/setup-hotspot-service.sh
 ```
 
-### 4. Start the service immediately (optional)
+This script will:
+- Copy the systemd service file to `/etc/systemd/system/`
+- Reload the systemd daemon
+- Enable the service to start on boot
+
+### 2. Start the Service Immediately
+
 ```bash
+# Start the service immediately (without rebooting)
 sudo systemctl start hotspot.service
 ```
 
-### 5. Verify the service status
-You can check if the service is running correctly with:
+### 3. Check Service Status
+
 ```bash
-sudo systemctl status hotspot.service 
+# Check service status
 sudo systemctl status hotspot.service
-journalctl -u hotspot.service
 ```
+
+## Service Management
+
+Once the service is installed, you can manage it with these commands:
+
+```bash
+# Stop hotspot
+sudo systemctl stop hotspot.service
+
+# Start hotspot
+sudo systemctl start hotspot.service
+
+# Restart hotspot
+sudo systemctl restart hotspot.service
+
+# Disable auto-start on boot
+sudo systemctl disable hotspot.service
+
+# Enable auto-start on boot (if previously disabled)
+sudo systemctl enable hotspot.service
+
+# View logs
+journalctl -u hotspot.service
+
+# View real-time logs
+journalctl -u hotspot.service -f
+```
+
+## Troubleshooting
+
+### Check if Hotspot is Running
+
+```bash
+# Check active connections
+nmcli connection show --active
+
+# Check WiFi interface status
+nmcli device status
+```
+
+### Check WiFi Interface Name
+
+If `wlP1p1s0` doesn't work, find your WiFi interface name:
+
+```bash
+# List all network interfaces
+ip link show
+
+# Or use nmcli
+nmcli device status
+```
+
+### View System Logs
+
+```bash
+# View service logs
+journalctl -u hotspot.service
+
+# View NetworkManager logs
+journalctl -u NetworkManager
+```
+
+### Restart NetworkManager
+
+If the hotspot fails to start:
+
+```bash
+sudo systemctl restart NetworkManager
+```
+
+## Files Location
+
+- **Start Script:** `/home/jetson/MuSoHu/scripts/start-hotspot.sh`
+- **Setup Script:** `/home/jetson/MuSoHu/scripts/setup-hotspot-service.sh`
+- **Service File:** `/home/jetson/MuSoHu/scripts/hotspot.service` (copied to `/etc/systemd/system/`)
+
+## Advanced Configuration
+
+To modify the hotspot settings, edit the start script:
+
+```bash
+nano /home/jetson/MuSoHu/scripts/start-hotspot.sh
+```
+
+You can change:
+- SSID name
+- Password
+- WiFi interface
+- Additional network settings
