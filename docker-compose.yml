@@ -10,8 +10,8 @@ services:
   ros2_vnc:
     build:
       context: .
-      dockerfile: Dockerfile.ros2
-    container_name: ros2_vnc
+      dockerfile: Dockerfile.zed
+    container_name: ros2_zed
     # hostname: robotixx
     ports:
       - "6080:80"
@@ -29,24 +29,12 @@ services:
       - ~/Desktop/Docker-Volumns/ros2_workspace:/home/ubuntu/ros2_ws
       - ~/Desktop/Docker-Volumns/ros2_logs:/home/ubuntu/.ros/log
       - ~/Desktop/Docker-Volumns/user_data:/home/ubuntu/user_data
-      # nvargus socket for camera daemon
-      - /tmp/argus_socket:/tmp/argus_socket
-      # NVIDIA configuration
-      - /etc/nvidia:/etc/nvidia:ro
-      # CUDA libraries
-      - /usr/local/cuda:/usr/local/cuda:ro
-      # Tegra libraries (contains libcuda.so.1)
-      - /usr/lib/aarch64-linux-gnu/tegra:/usr/lib/aarch64-linux-gnu/tegra:ro
-      # nvargus daemon runtime
-      - /var/run/nvargus:/var/run/nvargus
-      # Mount ZED SDK from host (read-only)
-      - /usr/local/zed:/usr/local/zed:ro
     shm_size: 512m
     security_opt:
       - seccomp:unconfined
     restart: unless-stopped
     environment:
-      - DISPLAY=:1
+      - DISPLAY
       - VNC_PASSWORD=ubuntu
       - ZED_CAMERA_MODEL=zed2i
       - NVIDIA_VISIBLE_DEVICES=all
