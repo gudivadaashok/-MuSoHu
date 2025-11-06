@@ -16,7 +16,7 @@ Start the hotspot manually using the provided script:
 
 ```bash
 # Start hotspot manually
-./scripts/start-hotspot.sh
+./scripts/hotspot/start-hotspot.sh
 ```
 
 Or use the direct nmcli command:
@@ -39,7 +39,7 @@ To configure the hotspot to start automatically when the Jetson boots:
 
 ```bash
 # Install and enable hotspot service to start automatically on boot
-sudo bash /home/jetson/MuSoHu/scripts/setup-hotspot-service.sh
+sudo bash /home/jetson/MuSoHu/scripts/hotspot/setup-hotspot-service.sh
 ```
 
 This script will:
@@ -132,16 +132,16 @@ sudo systemctl restart NetworkManager
 
 ## Files Location
 
-- **Start Script:** `/home/jetson/MuSoHu/scripts/start-hotspot.sh`
-- **Setup Script:** `/home/jetson/MuSoHu/scripts/setup-hotspot-service.sh`
-- **Service File:** `/home/jetson/MuSoHu/scripts/hotspot.service` (copied to `/etc/systemd/system/`)
+- **Start Script:** `/home/jetson/MuSoHu/scripts/hotspot/start-hotspot.sh`
+- **Setup Script:** `/home/jetson/MuSoHu/scripts/hotspot/setup-hotspot-service.sh`
+- **Service File:** `/home/jetson/MuSoHu/scripts/hotspot/hotspot.service` (copied to `/etc/systemd/system/`)
 
 ## Advanced Configuration
 
 To modify the hotspot settings, edit the start script:
 
 ```bash
-nano /home/jetson/MuSoHu/scripts/start-hotspot.sh
+nano /home/jetson/MuSoHu/scripts/hotspot/start-hotspot.sh
 ```
 
 You can change:

@@ -566,10 +566,10 @@ For complete WiFi hotspot setup and management instructions, see the **[Hotspot 
 **Quick Start:**
 ```bash
 # Start hotspot manually
-./scripts/start-hotspot.sh
+./scripts/hotspot/start-hotspot.sh
 
 # Auto-start on boot
-sudo bash /home/jetson/MuSoHu/scripts/setup-hotspot-service.sh
+sudo bash /home/jetson/MuSoHu/scripts/hotspot/setup-hotspot-service.sh
 ```
 
 **Network Credentials:**

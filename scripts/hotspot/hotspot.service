@@ -5,7 +5,7 @@ Wants=NetworkManager.service
 
 [Service]
 Type=oneshot
-ExecStart=/home/jetson/MuSoHu/scripts/start-hotspot.sh
+ExecStart=/home/jetson/MuSoHu/scripts/hotspot/start-hotspot.sh
 RemainAfterExit=yes
 User=root
 

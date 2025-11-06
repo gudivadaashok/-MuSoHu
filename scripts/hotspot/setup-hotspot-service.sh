@@ -4,8 +4,11 @@
 
 echo "Setting up hotspot service to start on boot..."
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Copy service file to systemd directory
-sudo cp /home/jetson/MuSoHu/scripts/hotspot.service /etc/systemd/system/
+sudo cp "$SCRIPT_DIR/hotspot.service" /etc/systemd/system/
 
 # Reload systemd daemon
 sudo systemctl daemon-reload
