@@ -1,4 +1,4 @@
-FROM tiryoh/ros2-desktop-vnc:humble
+FROM musohu-base-vnc:latest
 
 # Install audio dependencies, LiDAR dependencies, ZED camera dependencies, and ROS2 packages
 RUN apt-get update && apt-get install -y \
@@ -95,19 +95,22 @@ RUN pip3 install --no-cache-dir pyusb click pyaudio pixel-ring
 RUN apt-get update && apt-get install -y ros-humble-tf-transformations && rm -rf /var/lib/apt/lists/*
 RUN pip3 install --no-cache-dir --ignore-installed transforms3d
 
-# Install Zed2 SDK for jetpack 6.1- 6.2 (Ubuntu 22.04 )
-RUN apt-get update && apt-get install -y zstd wget && \
-    wget -q --no-check-certificate -O /tmp/ZED_SDK_Linux.run https://stereolabs.sfo2.cdn.digitaloceanspaces.com/zedsdk/5.1/ZED_SDK_Tegra_L4T36.4_v5.1.0.zstd.run && \
-    chmod +x /tmp/ZED_SDK_Linux.run && \
-    /tmp/ZED_SDK_Linux.run silent
+# ZED SDK will be mounted from host system at /usr/local/zed
+# Set ZED SDK library paths
+ENV LD_LIBRARY_PATH=/usr/local/zed/lib:${LD_LIBRARY_PATH}
+ENV PATH=/usr/local/zed/bin:${PATH}
+
+# Note: ZED SDK is mounted from host, so no installation needed
+# This ensures compatibility with the host's Jetson hardware configuration
 
 # Build the workspace (build audio, LiDAR, IMU, and ZED packages if SDK available)
 WORKDIR /home/ubuntu/ros2_ws
 
-RUN apt-get install -y ros-humble-rviz2 ros-humble-image-* ros-humble-imu-*
-RUN apt-get install -y ros-humble-image-transport-plugins ros-humble-sensor-msgs
+RUN apt-get update && apt-get install -y ros-humble-rviz2 ros-humble-image-transport ros-humble-image-transport-plugins ros-humble-sensor-msgs && rm -rf /var/lib/apt/lists/*
 
-RUN rosdep install --from-paths src --ignore-src -r -y
+# Install rosdep dependencies for all packages
+RUN rosdep update && \
+    rosdep install --from-paths src --ignore-src -r -y || true
 
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && source /tmp/ros2_deps/install/setup.bash && \
     colcon build --symlink-install --packages-select audio_common_msgs respeaker_ros audio_capture audio_play rslidar_msg rslidar_sdk witmotion_ros2 || \
