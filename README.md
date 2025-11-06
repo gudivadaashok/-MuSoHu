@@ -83,8 +83,8 @@ sudo systemctl disable hotspot.service
 ```
 
 ### Access Applications
-- **ROS2 VNC Desktop**: http://localhost:6080 (password: `ubuntu`, hostname: `robotixx`)
-- **Web Interface**: http://localhost:5001 (hostname: `robotixx-webapp`)
+- **ROS2 VNC Desktop**: http://localhost:6080 or http://robotixx:6080 (password: `ubuntu`)
+- **Web Interface**: http://localhost:5001 or http://robotixx:5001
 
 ### Quick Sensor Check
 
