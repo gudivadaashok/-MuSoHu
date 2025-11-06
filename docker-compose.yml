@@ -58,29 +58,29 @@ services:
     networks:
       - ros2_network
 
-  web_app:
-    build:
-      context: .
-      dockerfile: Dockerfile.webapp
-    container_name: musohu_webapp
-    hostname: robotixx-webapp
-    ports:
-      - "5001:5001"
-    volumes:
-      - .:/workspace
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ~/Desktop/Docker-Volumns/app_logs:/app/logs
-      - ~/Desktop/Docker-Volumns/app_data:/app/data
-      - ~/Desktop/Docker-Volumns/user_data:/app/users
-    depends_on:
-      - ros2_vnc
-    restart: unless-stopped
-    environment:
-      - FLASK_ENV=development
-      - FLASK_APP=ros2_script_manager/app.py
-    networks:
-      - ros2_network
-    working_dir: /workspace
+  # web_app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.webapp
+  #   container_name: musohu_webapp
+  #   hostname: robotixx-webapp
+  #   ports:
+  #     - "5001:5001"
+  #   volumes:
+  #     - .:/workspace
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - ~/Desktop/Docker-Volumns/app_logs:/app/logs
+  #     - ~/Desktop/Docker-Volumns/app_data:/app/data
+  #     - ~/Desktop/Docker-Volumns/user_data:/app/users
+  #   depends_on:
+  #     - ros2_vnc
+  #   restart: unless-stopped
+  #   environment:
+  #     - FLASK_ENV=development
+  #     - FLASK_APP=ros2_script_manager/app.py
+  #   networks:
+  #     - ros2_network
+  #   working_dir: /workspace
 
 networks:
   ros2_network:

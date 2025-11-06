@@ -35,10 +35,10 @@ RUN apt-get update && apt-get install -y \
 
 
 
-RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/arm64/cuda-keyring_1.1-1_all.deb
-RUN dpkg -i cuda-keyring_1.1-1_all.deb
-RUN apt-get update && apt-get install -y cuda-12-6
-RUN apt-get install -y cuda-toolkit-12-6
+# RUN wget https://~.download.nvidia.com/compute/cuda/repos/ubuntu2204/arm64/cuda-keyring_1.1-1_all.deb
+# RUN dpkg -i cuda-keyring_1.1-1_all.deb
+# RUN apt-get update && apt-get install -y cuda-12-6
+# RUN apt-get install -y cuda-toolkit-12-6
 
 # Install Python audio packages (build PyAudio from source for compatibility)
 RUN pip3 install --upgrade pip && \
