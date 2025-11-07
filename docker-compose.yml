@@ -7,44 +7,36 @@
 #   docker-compose up -d --build
 
 services:
-  ros2_vnc:
+  ros2_helmet:
     build:
       context: .
       dockerfile: Dockerfile.zed
-    container_name: ros2_zed
-    # hostname: robotixx
-    ports:
-      - "6080:80"
+    container_name: ros2_helmet
+    entrypoint: 
+      - /bin/bash
+      - -c
+      - |
+        if [ -f /etc/profile.d/ros2_entrypoint.sh ]; then
+          source /etc/profile.d/ros2_entrypoint.sh
+        fi
+        exec /bin/bash
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    hostname: robotixx
     privileged: true
     ipc: host
-    pid: host
     runtime: nvidia
-    devices:
-      # Audio device (ReSpeaker)
-      - /dev/snd:/dev/snd
-      # USB devices (includes ZED camera, IMU, etc.)
-      - /dev/bus/usb:/dev/bus/usb
     volumes:
       - .:/workspace
-      - ~/Desktop/Docker-Volumns/ros2_workspace:/home/ubuntu/ros2_ws
-      - ~/Desktop/Docker-Volumns/ros2_logs:/home/ubuntu/.ros/log
-      - ~/Desktop/Docker-Volumns/user_data:/home/ubuntu/user_data
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /dev:/dev
     shm_size: 512m
-    security_opt:
-      - seccomp:unconfined
     restart: unless-stopped
     environment:
-      - DISPLAY
-      - VNC_PASSWORD=ubuntu
-      - ZED_CAMERA_MODEL=zed2i
-      - NVIDIA_VISIBLE_DEVICES=all
+      - DISPLAY=${DISPLAY}
       - NVIDIA_DRIVER_CAPABILITIES=all
-      - LD_LIBRARY_PATH=/usr/local/zed/lib:/usr/lib/aarch64-linux-gnu:/usr/local/cuda/lib64:/usr/lib/aarch64-linux-gnu/tegra:${LD_LIBRARY_PATH}
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-    networks:
-      - ros2_network
+      - ZED_CAMERA_MODEL=zed2i
+    network_mode: "host"
 
   # web_app:
   #   build:
@@ -55,8 +47,8 @@ services:
   #   ports:
   #     - "5001:5001"
   #   volumes:
-  #     - .:/workspace
-  #     - /var/run/docker.sock:/var/run/docker.sock
+      # - .:/workspace
+      # - /var/run/docker.sock:/var/run/docker.sock
   #     - ~/Desktop/Docker-Volumns/app_logs:/app/logs
   #     - ~/Desktop/Docker-Volumns/app_data:/app/data
   #     - ~/Desktop/Docker-Volumns/user_data:/app/users
@@ -72,7 +64,7 @@ services:
 
 networks:
   ros2_network:
-    driver: bridge
+    driver: host
 
 volumes:
   ros2_workspace:

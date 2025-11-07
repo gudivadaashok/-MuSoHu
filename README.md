@@ -616,3 +616,41 @@ sudo bash /home/jetson/MuSoHu/scripts/hotspot/setup-hotspot-service.sh
 **Access URLs (when connected to hotspot):**
 - **Using hostname:** `http://robotixx:6080` (VNC) or `http://robotixx:5001` (Web)
 - **Using IP:** `http://10.42.0.1:6080` (VNC) or `http://10.42.0.1:5001` (Web)
+
+
+# snap_d_24724
+
+<!-- Browser not working due to snapd compatibility issues in JetPack -->
+
+## Troubleshooting Browser Issues with Snapd in JetPack
+
+
+
+### Verification Commands
+```bash
+# Check if browser is working
+firefox --version
+chromium-browser --version
+
+# Test browser launch
+firefox --no-sandbox &  # For Jetson compatibility
+chromium-browser --no-sandbox &
+
+# Check snapd status
+snap version
+snap list
+``` 
+
+### Reverse back to snapd_24724
+
+**Downgrade snapd to version 24724**
+```bash
+# Download specific snapd revision
+snap download snapd --revision=24724
+
+# Acknowledge the snap
+sudo snap ack snapd_24724.assert
+
+# Install the specific version
+sudo snap install snapd_24724.snap
+```

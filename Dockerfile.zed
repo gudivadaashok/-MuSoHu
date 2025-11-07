@@ -106,12 +106,14 @@ WORKDIR /home/ubuntu/ros2_ws
 RUN apt-get update && apt-get install -y ros-humble-rviz2 ros-humble-image-transport ros-humble-image-transport-plugins ros-humble-sensor-msgs && rm -rf /var/lib/apt/lists/*
 
 # Install rosdep dependencies for all packages
-RUN rosdep update && \
-    rosdep install --from-paths src --ignore-src -r -y || true
+RUN /bin/bash -c "sudo apt update && rosdep update && \
+    rosdep install --from-paths src --ignore-src -r -y || true"
+    
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && source /tmp/ros2_deps/install/setup.bash && \
+        colcon build --symlink-install --cmake-args=-DCMAKE_BUILD_TYPE=Release --packages-select zed_wrapper zed_components"
 
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && source /tmp/ros2_deps/install/setup.bash && \
-    colcon build --symlink-install --packages-select audio_common_msgs respeaker_ros audio_capture audio_play rslidar_msg rslidar_sdk witmotion_ros2 || \
-    colcon build --symlink-install --packages-select --cmake-args=-DCMAKE_BUILD_TYPE=Release zed_wrapper zed_components"
+    colcon build --symlink-install --packages-select audio_common_msgs respeaker_ros audio_capture audio_play rslidar_msg rslidar_sdk witmotion_ros2"
 
 # Source the workspace in bashrc in correct order
 RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc && \
