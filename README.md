@@ -548,7 +548,8 @@ docker exec ros2_vnc tail -f /tmp/zed.log
 tail -f ~/.ros/log/latest/zed.log
 ```
 
-**Status**: 🔧 Ready for integration (requires ZED SDK installation and camera connection)
+
+
 
 ## GitHub Repositories for each Driver
 - [witmotion_ros2](https://github.com/ioio2995/witmotion_ros2.git)
