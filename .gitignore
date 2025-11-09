@@ -61,3 +61,7 @@ tmp/
 *.crt
 .env
 secrets.yaml
+
+# logs
+logs/
+*.log
