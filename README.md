@@ -1,5 +1,12 @@
-# MuSoHu: Multi-Modal Social Human Navigation Dataset.
+# MuSoHu: Multi-Modal Social Human Navigation:
  
+Multi-Modal Social Human Navigation Dataset - A robotics research platform developed at George Mason University for collecting data on human-robot interactions in social navigation contexts.
+
+Overview
+
+MuSoHu is a platform that allows to collect data for the social navigation research project. It is built using ROS2 and provides a web interface for users to interact with the system.
+
+
 ## Create a workspace and clone sources
 
 ## In terminal 1 :
@@ -10,6 +17,25 @@ roslaunch musohu_package musohu_suite.launch
 ## In terminal 2 :
 ```bash
 python3 record.py
+```
+
+## Configure Firewall for VNC and SSH Access
+
+Before accessing noVNC, you need to configure the firewall to allow VNC and SSH connections:
+
+```bash
+# Allow SSH (port 22)
+sudo ufw allow ssh
+
+# Allow VNC ports
+sudo ufw allow 5900:5901/tcp    # VNC server
+sudo ufw allow 6080/tcp         # noVNC web interface
+
+# Enable the firewall if not already enabled
+sudo ufw enable
+
+# Verify the rules
+sudo ufw status
 ```
 
 ## Installation of NoVnc on Jetson Orin Nano

@@ -41,7 +41,7 @@ log_error() {
 }
 
 log_separator() {
-    echo "========================================" | tee -a "$LOG_FILE"
+    echo "_______________________*******_______________________" | tee -a "$LOG_FILE"
 }
 
 # Export functions and variables
