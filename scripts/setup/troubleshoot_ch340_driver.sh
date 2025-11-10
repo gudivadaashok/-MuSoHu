@@ -141,7 +141,51 @@ if ls /dev/ttyUSB* 2>/dev/null; then
     ls -la /dev/ttyUSB*
 else
     log_error "Device still not available after loading driver"
-    exit 1
+    log_info ""
+    log_info "Additional troubleshooting steps:"
+    log_separator
+    
+    # Check if module is actually loaded
+    log_info "Checking if ch34x module is loaded..."
+    if lsmod | grep -q ch34x; then
+        log_success "ch34x module is loaded:"
+        lsmod | grep ch34x
+    else
+        log_warning "ch34x module not found in lsmod"
+    fi
+    
+    # Check dmesg for errors
+    log_info "Checking dmesg for CH34x/USB errors..."
+    dmesg | grep -i "ch34\|usb\|tty" | tail -10
+    
+    # Check if device is detected but not assigned
+    log_info "Checking USB devices again..."
+    lsusb | grep -i "1a86\|qinheng"
+    
+    # Check for any USB or ACM serial devices
+    log_info "Checking for any USB/ACM serial devices..."
+    USB_ACM_DEVICES=$(ls /dev/tty* 2>/dev/null | grep -E "(USB|ACM)")
+    if [ -n "$USB_ACM_DEVICES" ]; then
+        log_success "Found USB/ACM devices:"
+        echo "$USB_ACM_DEVICES"
+    else
+        log_warning "No USB/ACM devices found"
+    fi
+    
+    # Check all tty devices
+    log_info "All available tty devices:"
+    ls /dev/tty* | head -20
+    
+    # Check udev rules
+    log_info "Checking udev rules for serial devices..."
+    ls -la /etc/udev/rules.d/*serial* /etc/udev/rules.d/*usb* 2>/dev/null || log_info "No serial/USB udev rules found"
+    
+    # Manual device creation attempt
+    log_info "Attempting manual device creation..."
+    log_info "Try unplugging and reconnecting the device"
+    log_info "Or run: sudo udevadm trigger"
+    
+    log_separator
 fi
 
 #***********************************************************************
@@ -169,10 +213,21 @@ fi
 log_separator
 log_success "CH340 Driver Troubleshooting Complete!"
 log_separator
-log_info "Next steps:"
-log_info "1. Verify IMU connection: ls -la /dev/ttyUSB*"
-log_info "2. Test with your ROS2 node or serial monitor"
-log_info "3. If issues persist, check dmesg: dmesg | grep -i ch341"
+log_info "Manual troubleshooting commands:"
+log_info "1. Check module status: lsmod | grep ch34x"
+log_info "2. Check USB devices: lsusb | grep -i qinheng"
+log_info "3. Check kernel messages: dmesg | grep -i ch34"
+log_info "4. Check all serial devices: ls /dev/tty* | grep -E '(USB|ACM)'"
+log_info "5. Trigger udev: sudo udevadm trigger"
+log_info "6. Reload udev rules: sudo udevadm control --reload-rules"
+log_info "7. Check permissions: ls -la /dev/ttyUSB* /dev/ttyACM*"
+log_info "8. Force module reload: sudo rmmod ch34x && sudo insmod /tmp/CH341SER/ch34x.ko"
+log_info ""
+log_info "If device still not working:"
+log_info "- Try a different USB port"
+log_info "- Check if device works on another computer"
+log_info "- Verify device is not already in use by another process"
+log_info "- Check cable connection"
 log_separator
 log_info "Logs saved to: $LOG_FILE"
 log_separator
