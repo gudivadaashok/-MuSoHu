@@ -120,13 +120,34 @@ log_success "CH341 driver compiled successfully"
 #***********************************************************************
 
 log_info "Loading compiled driver into kernel..."
+
+# Check if module is already loaded and remove it first
+log_info "Checking for existing ch34x module..."
+if lsmod | grep -q "ch34x"; then
+    log_warning "ch34x module already loaded, removing first..."
+    sudo rmmod ch34x
+    if [ $? -eq 0 ]; then
+        log_success "Existing module removed"
+    else
+        log_warning "Could not remove existing module (continuing anyway)"
+    fi
+fi
+
 log_info "Running: sudo make load"
 sudo make load
 if [ $? -ne 0 ]; then
     log_error "Failed to load driver into kernel"
-    exit 1
+    log_info "Attempting manual module insertion..."
+    log_info "Running: sudo insmod ch34x.ko"
+    if sudo insmod ch34x.ko 2>/dev/null; then
+        log_success "Module loaded manually"
+    else
+        log_error "Manual module insertion also failed"
+        exit 1
+    fi
+else
+    log_success "Driver loaded into kernel successfully"
 fi
-log_success "Driver loaded into kernel successfully"
 
 log_info "Waiting for device to appear..."
 sleep 2
