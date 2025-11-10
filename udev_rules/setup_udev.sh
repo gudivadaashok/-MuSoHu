@@ -106,22 +106,22 @@ fi
 log_separator
 log_info "Verifying installed udev rules..."
 
-if [ -f "$UDEV_RULES_DIR/90-respeaker.rules" ]; then
-    log_success "✓ ReSpeaker rules installed"
+if [ -f "$UDEV_RULES_DIR/40-respeaker.rules" ]; then
+    log_success "ReSpeaker rules installed"
 else
-    log_warning "✗ ReSpeaker rules not found"
+    log_warning "ReSpeaker rules not found"
 fi
 
-if [ -f "$UDEV_RULES_DIR/99-ch340.rules" ]; then
-    log_success "✓ CH340 rules installed"
+if [ -f "$UDEV_RULES_DIR/99-imu.rules" ]; then
+    log_success "CH340/IMU rules installed"
 else
-    log_warning "✗ CH340 rules not found"
+    log_warning "CH340/IMU rules not found"
 fi
 
-if [ -f "$UDEV_RULES_DIR/99-robosense.rules" ]; then
-    log_success "✓ RoboSense rules installed"
+if [ -f "$UDEV_RULES_DIR/40-zed.rules" ]; then
+    log_success "ZED Camera rules installed"
 else
-    log_warning "✗ RoboSense rules not found"
+    log_warning "ZED Camera rules not found"
 fi
 
 log_separator
