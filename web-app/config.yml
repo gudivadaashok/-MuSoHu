@@ -51,7 +51,11 @@ refresh_intervals:
 # Log viewer settings
 log_viewer:
   max_lines: 100  # Maximum number of log lines to display
-  # Directories to scan for all files (.log, .txt, etc.)
+  # Allowed file extensions for viewing (only these types can be displayed)
+  allowed_extensions:
+    - .log
+    - .txt
+  # Directories to scan for files
   scan_directories:
     - path: logs/
       enabled: true

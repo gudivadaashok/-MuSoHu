@@ -148,42 +148,64 @@ def get_logs():
         logs = []
 
         if os.path.exists(log_file):
-            with open(log_file, 'r') as f:
-                lines = f.readlines()
-                # Get last N lines based on config
-                lines = lines[-max_lines:]
+            # Check if file extension is allowed
+            allowed_extensions = log_viewer_config.get('allowed_extensions', ['.log', '.txt'])
+            file_extension = os.path.splitext(log_file)[1]
 
-                for line in lines:
-                    line = line.strip()
-                    if line:
-                        # Parse log format: [timestamp] LEVEL: message
-                        parts = line.split('] ', 1)
-                        if len(parts) == 2:
-                            timestamp = parts[0].replace('[', '')
-                            rest = parts[1]
-                            level_parts = rest.split(': ', 1)
-                            if len(level_parts) == 2:
-                                level = level_parts[0]
-                                message = level_parts[1]
-                                logs.append({
-                                    'timestamp': timestamp,
-                                    'level': level,
-                                    'message': message
-                                })
+            if file_extension not in allowed_extensions:
+                return jsonify({
+                    'logs': [],
+                    'error': f'Unable to display this file type. Only {", ".join(allowed_extensions)} files can be displayed.'
+                }), 400
+
+            try:
+                with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    lines = f.readlines()
+                    # Get last N lines based on config
+                    lines = lines[-max_lines:]
+
+                    for line in lines:
+                        line = line.strip()
+                        if line:
+                            # Parse log format: [timestamp] LEVEL: message
+                            parts = line.split('] ', 1)
+                            if len(parts) == 2:
+                                timestamp = parts[0].replace('[', '')
+                                rest = parts[1]
+                                level_parts = rest.split(': ', 1)
+                                if len(level_parts) == 2:
+                                    level = level_parts[0]
+                                    message = level_parts[1]
+                                    logs.append({
+                                        'timestamp': timestamp,
+                                        'level': level,
+                                        'message': message
+                                    })
+                                else:
+                                    logs.append({
+                                        'timestamp': timestamp,
+                                        'level': 'INFO',
+                                        'message': rest
+                                    })
                             else:
                                 logs.append({
-                                    'timestamp': timestamp,
+                                    'timestamp': '',
                                     'level': 'INFO',
-                                    'message': rest
+                                    'message': line
                                 })
-                        else:
-                            logs.append({
-                                'timestamp': '',
-                                'level': 'INFO',
-                                'message': line
-                            })
+            except UnicodeDecodeError:
+                return jsonify({
+                    'logs': [],
+                    'error': 'Unable to display this file. The file contains non-text or binary data.'
+                }), 400
+            except Exception as read_error:
+                logger.error(f'Error reading file {log_file}: {str(read_error)}')
+                return jsonify({
+                    'logs': [],
+                    'error': f'Error reading file: {str(read_error)}'
+                }), 500
         else:
-            return jsonify({'logs': [], 'error': f'Log file not found: {log_file}'})
+            return jsonify({'logs': [], 'error': f'Log file not found: {log_file}'}), 404
 
         return jsonify({'logs': logs, 'source': log_source})
     except Exception as e:

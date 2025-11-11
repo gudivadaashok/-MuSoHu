@@ -25,6 +25,11 @@
             <div class="logs-header">
                 <h2>Recent Log Entries</h2>
                 <div class="logs-controls">
+                    <select id="file-type-filter" onchange="changeFileTypeFilter()">
+                        <option value="all">All Files</option>
+                        <option value=".log">.log files</option>
+                        <option value=".txt">.txt files</option>
+                    </select>
                     <select id="log-source-selector" onchange="changeLogSource()">
                         <option value="">Loading sources...</option>
                     </select>
@@ -53,44 +58,74 @@
         let allLogs = [];
         let currentSource = 'musohu';
         let availableSources = {};
+        let allAvailableSources = {}; // Store all sources before filtering
+        let currentFileTypeFilter = 'all';
 
         async function loadLogSources() {
             try {
                 const response = await fetch('/api/logs/sources');
-                availableSources = await response.json();
+                allAvailableSources = await response.json();
 
-                const selector = document.getElementById('log-source-selector');
-                selector.innerHTML = '';
-
-                // Populate dropdown with available sources
-                const sourceIds = Object.keys(availableSources).sort();
-                if (sourceIds.length > 0) {
-                    sourceIds.forEach(id => {
-                        const source = availableSources[id];
-                        const option = document.createElement('option');
-                        option.value = id;
-                        option.textContent = source.name;
-                        if (!source.exists) {
-                            option.textContent += ' (not found)';
-                            option.disabled = true;
-                        }
-                        selector.appendChild(option);
-                    });
-
-                    // Set first available source as default
-                    const firstAvailable = sourceIds.find(id => availableSources[id].exists);
-                    if (firstAvailable) {
-                        currentSource = firstAvailable;
-                        selector.value = firstAvailable;
-                    }
-                } else {
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.textContent = 'No log sources found';
-                    selector.appendChild(option);
-                }
+                // Apply current file type filter
+                filterSourcesByFileType();
             } catch (error) {
                 console.error('Error loading log sources:', error);
+            }
+        }
+
+        function changeFileTypeFilter() {
+            const fileTypeFilter = document.getElementById('file-type-filter');
+            currentFileTypeFilter = fileTypeFilter.value;
+            filterSourcesByFileType();
+        }
+
+        function filterSourcesByFileType() {
+            const selector = document.getElementById('log-source-selector');
+
+            // Filter sources based on file type
+            if (currentFileTypeFilter === 'all') {
+                availableSources = {...allAvailableSources};
+            } else {
+                availableSources = {};
+                for (const [id, source] of Object.entries(allAvailableSources)) {
+                    if (source.path.endsWith(currentFileTypeFilter)) {
+                        availableSources[id] = source;
+                    }
+                }
+            }
+
+            // Update dropdown
+            selector.innerHTML = '';
+            const sourceIds = Object.keys(availableSources).sort();
+
+            if (sourceIds.length > 0) {
+                sourceIds.forEach(id => {
+                    const source = availableSources[id];
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = source.name;
+                    if (!source.exists) {
+                        option.textContent += ' (not found)';
+                        option.disabled = true;
+                    }
+                    selector.appendChild(option);
+                });
+
+                // Set first available source as default
+                const firstAvailable = sourceIds.find(id => availableSources[id].exists);
+                if (firstAvailable) {
+                    currentSource = firstAvailable;
+                    selector.value = firstAvailable;
+                    loadLogs();
+                }
+            } else {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = `No ${currentFileTypeFilter === 'all' ? '' : currentFileTypeFilter} files found`;
+                selector.appendChild(option);
+
+                const logsContent = document.getElementById('logs-content');
+                logsContent.innerHTML = `<p class="no-logs">No ${currentFileTypeFilter === 'all' ? '' : currentFileTypeFilter} files found</p>`;
             }
         }
 
