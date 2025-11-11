@@ -160,43 +160,6 @@ else
 fi
 
 #***********************************************************************
-# Configure Witmotion IMU serial port to /dev/ttyUSB0
-#***********************************************************************
-
-log_info "Configuring Witmotion IMU serial port..."
-IMU_CONFIG="$WORKSPACE_DIR/witmotion_ros2/config/witmotion.yaml"
-if [ -f "$IMU_CONFIG" ]; then
-    log_info "Found IMU config file: $IMU_CONFIG"
-    sed -i.bak 's|/dev/ttyUSB1|/dev/ttyUSB0|' "$IMU_CONFIG"
-    if [ $? -eq 0 ]; then
-        log_success "Witmotion IMU serial port configured to /dev/ttyUSB0"
-    else
-        log_error "Failed to configure Witmotion IMU serial port"
-    fi
-else
-    log_error "IMU config file not found at: $IMU_CONFIG"
-fi
-
-#***********************************************************************
-# Copy udev rules for ReSpeaker
-#***********************************************************************
-
-log_info "Copying udev rules for ReSpeaker..."
-RULES_DIR="$WORKSPACE_DIR/respeaker_ros/config"
-if [ -d "$RULES_DIR" ]; then
-    log_info "Found ReSpeaker config directory: $RULES_DIR"
-    if [ -f "$RULES_DIR"/*.rules ]; then
-        log_info "Copying rules files to /etc/udev/rules.d/"
-        sudo cp "$RULES_DIR"/*.rules /etc/udev/rules.d/ 2>/dev/null || log_warning "Could not copy udev rules (may require sudo)"
-        log_success "udev rules copied successfully"
-    else
-        log_warning "No .rules files found in $RULES_DIR"
-    fi
-else
-    log_error "ReSpeaker config directory not found at: $RULES_DIR"
-fi
-
-#***********************************************************************
 # Install Python dependencies for ReSpeaker
 #***********************************************************************
 
