@@ -33,6 +33,7 @@
                     <select id="log-source-selector" onchange="changeLogSource()">
                         <option value="">Loading sources...</option>
                     </select>
+                    <button onclick="downloadCurrentLog()" class="btn-download">Download</button>
                     <button onclick="loadLogs()" class="btn-refresh">Refresh</button>
                     <button onclick="clearLogsDisplay()" class="btn-clear">Clear Display</button>
                     <select id="log-level-filter" onchange="filterLogs()">
@@ -194,6 +195,17 @@
             const logsContent = document.getElementById('logs-content');
             logsContent.innerHTML = `<p class="no-logs">Display cleared. Click Refresh to reload logs.</p>`;
             allLogs = [];
+        }
+
+        function downloadCurrentLog() {
+            if (!currentSource) {
+                alert('Please select a log file first');
+                return;
+            }
+
+            // Open download URL in new window
+            const downloadUrl = `/api/logs/download?source=${encodeURIComponent(currentSource)}`;
+            window.open(downloadUrl, '_blank');
         }
 
         // Load log sources and logs on page load

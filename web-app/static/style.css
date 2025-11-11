@@ -322,7 +322,7 @@ h1 {
     }
 }
 
-.btn-refresh, .btn-clear {
+.btn-refresh, .btn-clear, .btn-download {
     padding: 1vh 2vh;
     border: 2px solid transparent;
     border-radius: 8px;
@@ -343,6 +343,19 @@ h1 {
     border-color: #059669;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-download {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.btn-download:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .btn-clear {
@@ -419,7 +432,7 @@ h1 {
 }
 
 @media (max-width: 768px) {
-    .btn-refresh, .btn-clear, #log-level-filter, #log-source-selector, #file-type-filter {
+    .btn-refresh, .btn-clear, .btn-download, #log-level-filter, #log-source-selector, #file-type-filter {
         width: 100%;
     }
 }

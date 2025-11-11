@@ -278,6 +278,69 @@ def get_log_sources():
 
     return jsonify(sources)
 
+@app.route('/api/logs/download', methods=['GET'])
+def download_log():
+    """Download a log file"""
+    from flask import send_file
+    try:
+        # Get log source from query parameter
+        log_source = request.args.get('source', '')
+
+        if not log_source:
+            return jsonify({'error': 'No source specified'}), 400
+
+        # Load log sources from config
+        log_viewer_config = config.get('log_viewer', {})
+
+        # Build log files mapping by scanning directories
+        log_files = {}
+        scan_directories = log_viewer_config.get('scan_directories', [])
+
+        for dir_config in scan_directories:
+            if not dir_config.get('enabled', True):
+                continue
+
+            dir_path = dir_config.get('path', '')
+
+            if os.path.exists(dir_path) and os.path.isdir(dir_path):
+                try:
+                    for filename in os.listdir(dir_path):
+                        file_path = os.path.join(dir_path, filename)
+                        # Only include files, not directories
+                        if os.path.isfile(file_path):
+                            log_id = filename.replace('.', '_')
+                            # Handle ID collisions
+                            if log_id in log_files:
+                                log_id = f"{os.path.basename(dir_path.rstrip('/'))}_{log_id}"
+                            log_files[log_id] = (file_path, filename)
+                except Exception as e:
+                    logger.error(f"Error scanning directory {dir_path}: {e}")
+
+        # Add individual sources from config
+        sources = log_viewer_config.get('sources', [])
+        for source in sources:
+            if source.get('enabled', True):
+                log_files[source['id']] = (source['path'], os.path.basename(source['path']))
+
+        if log_source not in log_files:
+            return jsonify({'error': 'Log file not found'}), 404
+
+        log_file_path, original_filename = log_files[log_source]
+
+        if not os.path.exists(log_file_path):
+            return jsonify({'error': 'Log file not found on disk'}), 404
+
+        logger.info(f'Downloading log file: {original_filename}')
+        return send_file(
+            log_file_path,
+            as_attachment=True,
+            download_name=original_filename,
+            mimetype='text/plain'
+        )
+    except Exception as e:
+        logger.error(f'Failed to download log: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/scripts/<script_id>/start', methods=['POST'])
 def start_script(script_id):
     logger.info(f'Attempting to start script: {script_id}')

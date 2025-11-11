@@ -10,7 +10,7 @@ def load_config():
         'logging': {
             'app_log': {
                 'enabled': True,
-                'path': 'logs/musohu.log',
+                'path': '../logs/musohu.log',
                 'level': 'INFO',
                 'max_size': 10485760,
                 'backup_count': 5,
