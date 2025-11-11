@@ -57,10 +57,13 @@ log_viewer:
     - .txt
   # Directories to scan for files
   scan_directories:
-    - path: logs/
+    - path: ../logs/
       enabled: true
       name_prefix: ""  # No prefix for files in main logs folder
-    - path: src/install/helmet_bringup/share/helmet_bringup/config/
+    - path: logs/
+      enabled: true
+      name_prefix: "WebApp - "  # Prefix for web-app logs folder
+    - path: ../src/install/helmet_bringup/share/helmet_bringup/config/
       enabled: true
       name_prefix: "ROS2 - "  # Prefix for ROS2 log files
   # Individual sources (optional, for specific files outside scan directories)
