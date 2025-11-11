@@ -12,22 +12,6 @@ logging:
     format: '[%(asctime)s] %(levelname)s: %(message)s'
     date_format: '%Y-%m-%d %H:%M:%S'
 
-  # ROS2 log file settings
-  ros2_log:
-    enabled: true
-    path: src/install/helmet_bringup/share/helmet_bringup/config/
-    level: INFO
-    max_size: 10485760
-    backup_count: 5
-
-  # Helmet bringup log file settings
-  helmet_log:
-    enabled: true
-    path: src/install/helmet_bringup/share/helmet_bringup/config/
-    level: INFO
-    max_size: 10485760
-    backup_count: 5
-
   # Console output
   console:
     enabled: true
@@ -63,7 +47,7 @@ log_viewer:
     - path: logs/
       enabled: true
       name_prefix: "WebApp - "  # Prefix for web-app logs folder
-    - path: ../src/install/helmet_bringup/share/helmet_bringup/config/
+    - path: ../src/install/helmet_bringup/share/helmet_logs/
       enabled: true
       name_prefix: "ROS2 - "  # Prefix for ROS2 log files
   # Individual sources (optional, for specific files outside scan directories)
