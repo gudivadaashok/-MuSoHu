@@ -166,7 +166,7 @@ fi
 log_info "Installing system dependencies for ReSpeaker..."
 log_info "Installing PortAudio development files..."
 sudo apt-get update
-sudo apt-get install -y portaudio19-dev libasound2-dev libsndfile1-dev
+sudo apt-get install -y portaudio19-dev libasound2-dev libsndfile1-dev python3-venv
 if [ $? -eq 0 ]; then
     log_success "System dependencies installed successfully"
 else
@@ -176,39 +176,76 @@ fi
 log_info "Installing Python dependencies for ReSpeaker..."
 log_info "Installing: pyusb, click, pyaudio, pixel-ring"
 
-# Fix potential permission issues with ZED SDK Python packages
-if [ -d "/usr/local/lib/python3.10/dist-packages/pyzed-5.1.dist-info" ]; then
-    log_info "Fixing ZED SDK Python package permissions..."
-    sudo chmod -R 755 /usr/local/lib/python3.10/dist-packages/pyzed*
+# Comprehensive fix for permission issues with all packages in /usr/local/lib/python3.10/dist-packages/
+log_info "Fixing potential permission issues with system Python packages..."
+if [ -d "/usr/local/lib/python3.10/dist-packages" ]; then
+    log_info "Found /usr/local/lib/python3.10/dist-packages/, fixing permissions..."
+    sudo chmod -R 755 /usr/local/lib/python3.10/dist-packages/ 2>/dev/null || true
+    sudo find /usr/local/lib/python3.10/dist-packages/ -type f -name "*.dist-info" -exec chmod 755 {} \; 2>/dev/null || true
+    sudo find /usr/local/lib/python3.10/dist-packages/ -type d -name "*dist-info*" -exec chmod 755 {} \; 2>/dev/null || true
 fi
 
-# Try system packages first, then fallback to pip
-log_info "Attempting to install via system packages where available..."
-sudo apt-get install -y python3-click python3-usb || true
+# Try system packages first
+log_info "Installing available system packages..."
+sudo apt-get install -y python3-click python3-usb python3-numpy python3-matplotlib || true
 
-# Install remaining packages with pip using --user to avoid system conflicts
-log_info "Installing remaining packages with pip --user..."
-python3 -m pip install --user --no-cache-dir pyusb click pyaudio pixel-ring
+# Create a clean virtual environment as the primary installation method
+log_info "Creating virtual environment for Python packages..."
+VENV_PATH="$HOME/musohu_python_env"
 
+# Remove existing virtual environment if it exists
+if [ -d "$VENV_PATH" ]; then
+    log_info "Removing existing virtual environment..."
+    rm -rf "$VENV_PATH"
+fi
+
+# Create new virtual environment
+python3 -m venv "$VENV_PATH"
 if [ $? -eq 0 ]; then
-    log_success "ReSpeaker Python dependencies installed successfully"
-else
-    log_error "Failed to install ReSpeaker Python dependencies"
-    log_info "Trying alternative installation method..."
+    log_success "Virtual environment created successfully at $VENV_PATH"
     
-    # Alternative: Create a virtual environment
-    log_info "Creating virtual environment for Python packages..."
-    python3 -m venv ~/respeaker_venv
-    source ~/respeaker_venv/bin/activate
-    pip install --no-cache-dir pyusb click pyaudio pixel-ring
-    deactivate
+    # Activate and install packages
+    source "$VENV_PATH/bin/activate"
+    
+    # Upgrade pip in virtual environment
+    pip install --upgrade pip setuptools wheel
+    
+    # Install required packages
+    log_info "Installing Python packages in virtual environment..."
+    pip install pyusb click pyaudio pixel-ring transforms3d
     
     if [ $? -eq 0 ]; then
-        log_success "ReSpeaker Python dependencies installed in virtual environment"
-        log_info "To use: source ~/respeaker_venv/bin/activate"
+        log_success "All Python packages installed successfully in virtual environment"
+        log_info "Virtual environment location: $VENV_PATH"
+        log_info "To use this environment, run: source $VENV_PATH/bin/activate"
+        
+        # Create activation script for easy access
+        cat > "$HOME/activate_musohu_env.sh" << 'EOF'
+#!/bin/bash
+echo "Activating MuSoHu Python environment..."
+source ~/musohu_python_env/bin/activate
+echo "Environment activated. Python packages are now available."
+echo "To deactivate, run: deactivate"
+EOF
+        chmod +x "$HOME/activate_musohu_env.sh"
+        log_info "Created activation script at: $HOME/activate_musohu_env.sh"
+        
     else
-        log_error "Alternative installation also failed"
+        log_error "Failed to install packages in virtual environment"
     fi
+    
+    deactivate
+else
+    log_error "Failed to create virtual environment"
+    log_info "Attempting system-wide installation as last resort..."
+    
+    # Last resort: try to fix pip completely and install globally
+    log_info "Attempting to rebuild pip environment..."
+    sudo apt-get install -y --reinstall python3-pip python3-setuptools python3-wheel
+    
+    # Try to install with pip system-wide but with --break-system-packages flag
+    log_info "Installing with --break-system-packages flag..."
+    python3 -m pip install --break-system-packages pyusb click pyaudio pixel-ring transforms3d || log_error "All installation methods failed"
 fi
 
 #***********************************************************************
@@ -224,12 +261,22 @@ else
     log_warning "Failed to install ROS2 tf-transformations (may not be available)"
 fi
 
-log_info "Installing transforms3d Python package..."
-python3 -m pip install --user --no-cache-dir --ignore-installed transforms3d
-if [ $? -eq 0 ]; then
-    log_success "transforms3d installed successfully"
+# transforms3d should already be installed in the virtual environment above
+# But provide alternative installation methods if needed
+log_info "Checking transforms3d installation..."
+if [ -f "$HOME/musohu_python_env/bin/activate" ]; then
+    source "$HOME/musohu_python_env/bin/activate"
+    python3 -c "import transforms3d; print('transforms3d is available in virtual environment')" 2>/dev/null
+    if [ $? -eq 0 ]; then
+        log_success "transforms3d is available in virtual environment"
+    else
+        log_warning "transforms3d may not be installed in virtual environment"
+    fi
+    deactivate
 else
-    log_error "Failed to install transforms3d"
+    log_info "Virtual environment not found, checking system installation..."
+    python3 -c "import transforms3d; print('transforms3d is available system-wide')" 2>/dev/null || \
+    log_info "transforms3d not available system-wide (this is expected if using virtual environment)"
 fi
 
 log_info "Driver download and configuration process completed successfully."
