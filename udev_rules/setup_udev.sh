@@ -14,6 +14,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 UDEV_RULES_DIR="/etc/udev/rules.d"
 RULES_SOURCE_DIR="$SCRIPT_DIR/rules"
 
+#######################################################################
+# Source the logging configuration from the scripts/utils directory
+# This uses $SCRIPT_DIR to navigate to the correct logging_config.sh file
+# The path goes up one level (../) from udev_rules to reach scripts/utils
+#######################################################################
 source "$SCRIPT_DIR/../scripts/utils/logging_config.sh"
 
 log_debug "Script directory: $SCRIPT_DIR"
