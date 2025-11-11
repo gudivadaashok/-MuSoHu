@@ -175,11 +175,40 @@ fi
 
 log_info "Installing Python dependencies for ReSpeaker..."
 log_info "Installing: pyusb, click, pyaudio, pixel-ring"
-pip3 install --no-cache-dir pyusb click pyaudio pixel-ring
+
+# Fix potential permission issues with ZED SDK Python packages
+if [ -d "/usr/local/lib/python3.10/dist-packages/pyzed-5.1.dist-info" ]; then
+    log_info "Fixing ZED SDK Python package permissions..."
+    sudo chmod -R 755 /usr/local/lib/python3.10/dist-packages/pyzed*
+fi
+
+# Try system packages first, then fallback to pip
+log_info "Attempting to install via system packages where available..."
+sudo apt-get install -y python3-click python3-usb || true
+
+# Install remaining packages with pip using --user to avoid system conflicts
+log_info "Installing remaining packages with pip --user..."
+python3 -m pip install --user --no-cache-dir pyusb click pyaudio pixel-ring
+
 if [ $? -eq 0 ]; then
     log_success "ReSpeaker Python dependencies installed successfully"
 else
     log_error "Failed to install ReSpeaker Python dependencies"
+    log_info "Trying alternative installation method..."
+    
+    # Alternative: Create a virtual environment
+    log_info "Creating virtual environment for Python packages..."
+    python3 -m venv ~/respeaker_venv
+    source ~/respeaker_venv/bin/activate
+    pip install --no-cache-dir pyusb click pyaudio pixel-ring
+    deactivate
+    
+    if [ $? -eq 0 ]; then
+        log_success "ReSpeaker Python dependencies installed in virtual environment"
+        log_info "To use: source ~/respeaker_venv/bin/activate"
+    else
+        log_error "Alternative installation also failed"
+    fi
 fi
 
 #***********************************************************************
@@ -196,7 +225,7 @@ else
 fi
 
 log_info "Installing transforms3d Python package..."
-pip3 install --no-cache-dir --ignore-installed transforms3d
+python3 -m pip install --user --no-cache-dir --ignore-installed transforms3d
 if [ $? -eq 0 ]; then
     log_success "transforms3d installed successfully"
 else
