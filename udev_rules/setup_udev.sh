@@ -17,7 +17,7 @@ log_info "Setting up udev rules for MuSoHu devices..."
 log_separator
 
 UDEV_RULES_DIR="/etc/udev/rules.d"
-RULES_SOURCE_DIR="$SCRIPT_DIR"
+RULES_SOURCE_DIR="$SCRIPT_DIR/rules"
 
 # Check if running with sudo
 if [ "$EUID" -ne 0 ]; then
