@@ -1,0 +1,67 @@
+# MuSoHu Web Application Configuration
+
+# Logging Configuration
+logging:
+  # Application log file settings
+  app_log:
+    enabled: true
+    path: logs/musohu.log
+    level: INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    max_size: 10485760  # 10 MB in bytes
+    backup_count: 5  # Number of backup files to keep
+    format: '[%(asctime)s] %(levelname)s: %(message)s'
+    date_format: '%Y-%m-%d %H:%M:%S'
+
+  # ROS2 log file settings
+  ros2_log:
+    enabled: true
+    path: src/install/helmet_bringup/share/helmet_bringup/config/ros2.log
+    level: INFO
+    max_size: 10485760
+    backup_count: 5
+
+  # Helmet bringup log file settings
+  helmet_log:
+    enabled: true
+    path: src/install/helmet_bringup/share/helmet_bringup/config/helmet.log
+    level: INFO
+    max_size: 10485760
+    backup_count: 5
+
+  # Console output
+  console:
+    enabled: true
+    level: INFO
+    format: '[%(asctime)s] %(levelname)s: %(message)s'
+    date_format: '%Y-%m-%d %H:%M:%S'
+
+# Server Configuration
+server:
+  host: 0.0.0.0
+  port: 5001
+  debug: false
+  threaded: true
+
+# Auto-refresh intervals (in seconds)
+refresh_intervals:
+  scripts: 5
+  disk_space: 10
+  logs: 5
+
+# Log viewer settings
+log_viewer:
+  max_lines: 100  # Maximum number of log lines to display
+  sources:
+    - id: app
+      name: Application Logs
+      path: logs/musohu.log
+      enabled: true
+    - id: ros2
+      name: ROS2 Logs
+      path: src/install/helmet_bringup/share/helmet_bringup/config/ros2.log
+      enabled: true
+    - id: helmet
+      name: Helmet Bringup Logs
+      path: src/install/helmet_bringup/share/helmet_bringup/config/helmet.log
+      enabled: true
+

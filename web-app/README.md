@@ -1,88 +1,122 @@
-# ROS2 Script Manager Web App
+# Web Application Configuration
 
-A simple Flask web application to control and monitor ROS2 scripts through a browser interface.
+This directory contains the MuSoHu web application for managing ROS2 scripts, viewing logs, and monitoring system resources.
 
-## Features
+## Configuration File: config.yml
 
-- 🎮 Start/Stop ROS2 scripts with a single click
-- 📊 Real-time status monitoring
-- 🎨 Modern, responsive UI with gradient design
-- 🔄 Auto-refresh every 5 seconds
+The `config.yml` file allows you to customize various aspects of the web application without modifying the code.
 
-## Prerequisites
+### Configuration Sections
 
-- Python 3.7+
-- ROS2 Humble (installed and sourced)
-- pip
+#### 1. Logging Configuration
 
-## Installation
+Control how the application logs are managed:
 
-1. Navigate to the project directory:
-```bash
-cd ros2_script_manager
+```yaml
+logging:
+  app_log:
+    enabled: true                    # Enable/disable application logging
+    path: logs/musohu.log           # Path to the log file
+    level: INFO                      # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+    max_size: 10485760              # Maximum log file size in bytes (10 MB)
+    backup_count: 5                 # Number of backup log files to keep
+    format: '[%(asctime)s] %(levelname)s: %(message)s'
+    date_format: '%Y-%m-%d %H:%M:%S'
 ```
 
-2. Install Python dependencies:
-```bash
-pip install -r requirements.txt
+#### 2. Server Configuration
+
+Configure the Flask server settings:
+
+```yaml
+server:
+  host: 0.0.0.0      # Listen on all network interfaces
+  port: 5001         # Port number for the web application
+  debug: false       # Enable/disable debug mode
+  threaded: true     # Enable/disable multi-threading
 ```
 
-## Usage
+#### 3. Auto-Refresh Intervals
 
-1. Start the Flask server:
-```bash
-python app.py
+Set how frequently (in seconds) different views refresh:
+
+```yaml
+refresh_intervals:
+  scripts: 5         # Scripts status refresh interval
+  disk_space: 10     # Disk space information refresh interval
+  logs: 5           # Log viewer refresh interval
 ```
 
-2. Open your browser and navigate to:
-```
-http://localhost:5000
-```
+#### 4. Log Viewer Settings
 
-3. Click "Start" or "Stop" buttons to control ROS2 scripts
+Configure the log viewer functionality:
 
-## Adding New Scripts
-
-Edit the `ROS2_SCRIPTS` dictionary in `app.py`:
-
-```python
-ROS2_SCRIPTS = {
-    'script_id': {
-        'command': 'ros2 run package_name node_name',
-        'description': 'Your Script Description',
-        'status': 'stopped'
-    }
-}
+```yaml
+log_viewer:
+  max_lines: 100    # Maximum number of log lines to display
+  sources:
+    - id: app
+      name: Application Logs
+      path: logs/musohu.log
+      enabled: true
+    - id: ros2
+      name: ROS2 Logs
+      path: src/install/helmet_bringup/share/helmet_bringup/config/ros2.log
+      enabled: true
 ```
 
-## Directory Structure
+### Adding New Log Sources
 
+To add a new log source to the viewer:
+
+1. Edit `config.yml`
+2. Add a new entry under `log_viewer.sources`:
+
+```yaml
+- id: my_custom_log
+  name: My Custom Log
+  path: path/to/my/log.log
+  enabled: true
 ```
-ros2_script_manager/
-├── app.py                  # Flask backend
-├── requirements.txt        # Python dependencies
-├── templates/
-│   └── index.html         # HTML template
-├── static/
-│   └── style.css          # CSS styling
-└── README.md              # This file
+
+3. Restart the application
+4. The new log source will appear in the dropdown on the logs page
+
+### Changing Log Levels
+
+To get more detailed logs, change the level from `INFO` to `DEBUG`:
+
+```yaml
+logging:
+  app_log:
+    level: DEBUG
 ```
 
-## API Endpoints
+Available log levels (from least to most verbose):
+- `CRITICAL` - Only critical errors
+- `ERROR` - Errors and critical issues
+- `WARNING` - Warnings, errors, and critical issues
+- `INFO` - General information (default)
+- `DEBUG` - Detailed debugging information
 
-- `GET /api/scripts` - List all available scripts
-- `POST /api/scripts/<script_id>/start` - Start a script
-- `POST /api/scripts/<script_id>/stop` - Stop a script
+### Installation
 
-## Troubleshooting
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-**Scripts won't start:**
-- Ensure ROS2 is properly sourced in your environment
-- Check that the ROS2 commands work in your terminal first
+2. Make sure the config.yml file exists in the web-app directory
 
-**Port 5000 already in use:**
-- Change the port in `app.py`: `app.run(host='0.0.0.0', port=<new_port>)`
+3. Run the application:
+   ```bash
+   python app.py
+   ```
 
-## License
+### Notes
 
-MIT License
+- If `config.yml` is not found, the application will use default values
+- Log files and their parent directories will be created automatically if they don't exist
+- Changes to most configuration values require restarting the application
+- Invalid YAML syntax will cause the application to fall back to default settings
+

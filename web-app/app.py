@@ -4,10 +4,21 @@ import subprocess
 import os
 import signal
 import shutil
+import yaml
 from logging_config import setup_logging
 
 app = Flask(__name__)
 CORS(app)
+
+# Load configuration
+def load_config():
+    config_path = 'config.yml'
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as f:
+            return yaml.safe_load(f)
+    return {}
+
+config = load_config()
 
 # Setup logging
 logger = setup_logging(app)
@@ -89,21 +100,33 @@ def get_logs():
         # Get log source from query parameter (default: 'app')
         log_source = request.args.get('source', 'app')
 
-        # Define available log sources
-        log_files = {
-            'app': 'logs/musohu.log',
-            'ros2': 'src/install/helmet_bringup/share/helmet_bringup/config/ros2.log',
-            'helmet': 'src/install/helmet_bringup/share/helmet_bringup/config/helmet.log'
-        }
+        # Load log sources from config
+        log_viewer_config = config.get('log_viewer', {})
+        sources = log_viewer_config.get('sources', [])
+        max_lines = log_viewer_config.get('max_lines', 100)
 
-        log_file = log_files.get(log_source, log_files['app'])
+        # Build log files mapping from config
+        log_files = {}
+        for source in sources:
+            if source.get('enabled', True):
+                log_files[source['id']] = source['path']
+
+        # Fallback to defaults if config is empty
+        if not log_files:
+            log_files = {
+                'app': 'logs/musohu.log',
+                'ros2': 'src/install/helmet_bringup/share/helmet_bringup/config/ros2.log',
+                'helmet': 'src/install/helmet_bringup/share/helmet_bringup/config/helmet.log'
+            }
+
+        log_file = log_files.get(log_source, log_files.get('app', 'logs/musohu.log'))
         logs = []
 
         if os.path.exists(log_file):
             with open(log_file, 'r') as f:
                 lines = f.readlines()
-                # Get last 100 lines
-                lines = lines[-100:]
+                # Get last N lines based on config
+                lines = lines[-max_lines:]
 
                 for line in lines:
                     line = line.strip()
@@ -144,24 +167,39 @@ def get_logs():
 
 @app.route('/api/logs/sources', methods=['GET'])
 def get_log_sources():
-    """Return available log sources and their paths"""
-    sources = {
-        'app': {
-            'name': 'Application Logs',
-            'path': 'logs/musohu.log',
-            'exists': os.path.exists('logs/musohu.log')
-        },
-        'ros2': {
-            'name': 'ROS2 Logs',
-            'path': 'src/install/helmet_bringup/share/helmet_bringup/config/ros2.log',
-            'exists': os.path.exists('src/install/helmet_bringup/share/helmet_bringup/config/ros2.log')
-        },
-        'helmet': {
-            'name': 'Helmet Bringup Logs',
-            'path': 'src/install/helmet_bringup/share/helmet_bringup/config/helmet.log',
-            'exists': os.path.exists('src/install/helmet_bringup/share/helmet_bringup/config/helmet.log')
+    """Return available log sources and their paths from config"""
+    log_viewer_config = config.get('log_viewer', {})
+    sources_config = log_viewer_config.get('sources', [])
+
+    sources = {}
+    for source in sources_config:
+        if source.get('enabled', True):
+            sources[source['id']] = {
+                'name': source['name'],
+                'path': source['path'],
+                'exists': os.path.exists(source['path'])
+            }
+
+    # Fallback to defaults if config is empty
+    if not sources:
+        sources = {
+            'app': {
+                'name': 'Application Logs',
+                'path': 'logs/musohu.log',
+                'exists': os.path.exists('logs/musohu.log')
+            },
+            'ros2': {
+                'name': 'ROS2 Logs',
+                'path': 'src/install/helmet_bringup/share/helmet_bringup/config/ros2.log',
+                'exists': os.path.exists('src/install/helmet_bringup/share/helmet_bringup/config/ros2.log')
+            },
+            'helmet': {
+                'name': 'Helmet Bringup Logs',
+                'path': 'src/install/helmet_bringup/share/helmet_bringup/config/helmet.log',
+                'exists': os.path.exists('src/install/helmet_bringup/share/helmet_bringup/config/helmet.log')
+            }
         }
-    }
+
     return jsonify(sources)
 
 @app.route('/api/scripts/<script_id>/start', methods=['POST'])
