@@ -11,14 +11,17 @@
 
 # Source logging configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+UDEV_RULES_DIR="/etc/udev/rules.d"
+RULES_SOURCE_DIR="$SCRIPT_DIR/rules"
+
 source "$SCRIPT_DIR/../scripts/utils/logging_config.sh"
 
 log_debug "Script directory: $SCRIPT_DIR"
 log_info "Setting up udev rules for MuSoHu devices..."
+log_info "Using rules source directory: $RULES_SOURCE_DIR"
+log_info "Using udev rules directory: $UDEV_RULES_DIR"
 log_separator
 
-UDEV_RULES_DIR="/etc/udev/rules.d"
-RULES_SOURCE_DIR="$SCRIPT_DIR/rules"
 log_debug "Looking for rules in: $RULES_SOURCE_DIR"
 
 # Check if running with sudo
