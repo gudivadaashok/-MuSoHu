@@ -14,13 +14,13 @@ def generate_launch_description():
     # Declare launch arguments
     camera_model_arg = DeclareLaunchArgument(
         'camera_model',
-        default_value='zed2',
+        default_value='zed2i',
         description='ZED camera model (zed, zed2, zed2i, zedm, zedx, zedxm)'
     )
     
     camera_name_arg = DeclareLaunchArgument(
         'camera_name',
-        default_value='zed2',
+        default_value='zed2i',
         description='Camera name for topics'
     )
     
