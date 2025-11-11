@@ -27,12 +27,17 @@ fi
 log_info "Cloning audio_common package for ROS2..."
 cd "$WORKSPACE_DIR"
 
-git clone -b ros2 https://github.com/ros-drivers/audio_common.git
-if [ $? -eq 0 ]; then
-    log_success "audio_common package cloned successfully"
+if [ -d "audio_common" ]; then
+    log_warning "audio_common directory already exists, skipping clone"
+    log_info "To update: cd $WORKSPACE_DIR/audio_common && git pull"
 else
-    log_error "Failed to clone audio_common package"
-    exit 1
+    git clone -b ros2 https://github.com/ros-drivers/audio_common.git
+    if [ $? -eq 0 ]; then
+        log_success "audio_common package cloned successfully"
+    else
+        log_error "Failed to clone audio_common package"
+        exit 1
+    fi
 fi
 
 
@@ -40,16 +45,20 @@ fi
 # Clone respeaker_ros
 #***********************************************************************
 
-
 log_info "Cloning respeaker_ros package..."
 cd "$WORKSPACE_DIR"
 
-git clone https://github.com/hcrlab/respeaker_ros.git
-if [ $? -eq 0 ]; then
-    log_success "respeaker_ros package cloned successfully"
+if [ -d "respeaker_ros" ]; then
+    log_warning "respeaker_ros directory already exists, skipping clone"
+    log_info "To update: cd $WORKSPACE_DIR/respeaker_ros && git pull"
 else
-    log_error "Failed to clone respeaker_ros package"
-    exit 1
+    git clone https://github.com/hcrlab/respeaker_ros.git
+    if [ $? -eq 0 ]; then
+        log_success "respeaker_ros package cloned successfully"
+    else
+        log_error "Failed to clone respeaker_ros package"
+        exit 1
+    fi
 fi
 
 #***********************************************************************
@@ -58,26 +67,38 @@ fi
 
 log_info "Cloning RoboSense LiDAR SDK and message definitions..."
 cd "$WORKSPACE_DIR"
-git clone https://github.com/RoboSense-LiDAR/rslidar_sdk.git && \
-    cd rslidar_sdk && \
-    git submodule init && \
-    git submodule update
-if [ $? -eq 0 ]; then
-    log_success "RoboSense LiDAR SDK cloned and submodules updated successfully"
+
+if [ -d "rslidar_sdk" ]; then
+    log_warning "rslidar_sdk directory already exists, skipping clone"
+    log_info "To update: cd $WORKSPACE_DIR/rslidar_sdk && git pull"
 else
-    log_error "Failed to clone RoboSense LiDAR SDK or update submodules"
-    exit 1
+    git clone https://github.com/RoboSense-LiDAR/rslidar_sdk.git && \
+        cd rslidar_sdk && \
+        git submodule init && \
+        git submodule update
+    if [ $? -eq 0 ]; then
+        log_success "RoboSense LiDAR SDK cloned and submodules updated successfully"
+    else
+        log_error "Failed to clone RoboSense LiDAR SDK or update submodules"
+        exit 1
+    fi
 fi
 
 
 log_info "Cloning rslidar_msgs package..."
 cd "$WORKSPACE_DIR"
-git clone https://github.com/RoboSense-LiDAR/rslidar_msg.git
-if [ $? -eq 0 ]; then
-    log_success "rslidar_msgs package cloned successfully"
+
+if [ -d "rslidar_msg" ]; then
+    log_warning "rslidar_msg directory already exists, skipping clone"
+    log_info "To update: cd $WORKSPACE_DIR/rslidar_msg && git pull"
 else
-    log_error "Failed to clone rslidar_msgs package"
-    exit 1
+    git clone https://github.com/RoboSense-LiDAR/rslidar_msg.git
+    if [ $? -eq 0 ]; then
+        log_success "rslidar_msgs package cloned successfully"
+    else
+        log_error "Failed to clone rslidar_msgs package"
+        exit 1
+    fi
 fi
 
 #***********************************************************************
@@ -86,12 +107,18 @@ fi
 
 log_info "Cloning Witmotion IMU ROS2 driver..."
 cd "$WORKSPACE_DIR"
-git clone https://github.com/ioio2995/witmotion_ros2.git
-if [ $? -eq 0 ]; then
-    log_success "Witmotion IMU ROS2 driver cloned successfully"
+
+if [ -d "witmotion_ros2" ]; then
+    log_warning "witmotion_ros2 directory already exists, skipping clone"
+    log_info "To update: cd $WORKSPACE_DIR/witmotion_ros2 && git pull"
 else
-    log_error "Failed to clone Witmotion IMU ROS2 driver"
-    exit 1
+    git clone https://github.com/ioio2995/witmotion_ros2.git
+    if [ $? -eq 0 ]; then
+        log_success "Witmotion IMU ROS2 driver cloned successfully"
+    else
+        log_error "Failed to clone Witmotion IMU ROS2 driver"
+        exit 1
+    fi
 fi
 
 #***********************************************************************
@@ -100,12 +127,18 @@ fi
 
 log_info "Cloning ZED ROS2 package..."
 cd "$WORKSPACE_DIR"
-git clone --recursive https://github.com/stereolabs/zed-ros2-wrapper.git
-if [ $? -eq 0 ]; then
-    log_success "ZED ROS2 package cloned successfully"
+
+if [ -d "zed-ros2-wrapper" ]; then
+    log_warning "zed-ros2-wrapper directory already exists, skipping clone"
+    log_info "To update: cd $WORKSPACE_DIR/zed-ros2-wrapper && git pull --recurse-submodules"
 else
-    log_error "Failed to clone ZED ROS2 package"
-    exit 1
+    git clone --recursive https://github.com/stereolabs/zed-ros2-wrapper.git
+    if [ $? -eq 0 ]; then
+        log_success "ZED ROS2 package cloned successfully"
+    else
+        log_error "Failed to clone ZED ROS2 package"
+        exit 1
+    fi
 fi
 
 #***********************************************************************
