@@ -81,4 +81,4 @@ If you encounter a browser issue on the Jetson Orin Nano, the installation scrip
 3. Install the snap package:
    ```bash
    sudo snap install snapd_24724.snap
-   ```
+   ```ip link show | grep -A1 -B1 "state"

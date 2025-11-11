@@ -3,6 +3,7 @@ from flask_cors import CORS
 import subprocess
 import os
 import signal
+import shutil
 from logging_config import setup_logging
 
 app = Flask(__name__)
@@ -20,13 +21,13 @@ DOCKER_CONTAINER = 'ros2_vnc'
 # Define available ROS2 scripts
 ROS2_SCRIPTS = {
     'turtlesim': {
-        'command': f'docker exec --user ubuntu -e DISPLAY=:1 {DOCKER_CONTAINER} bash -c "source /opt/ros/humble/setup.bash && ros2 run turtlesim turtlesim_node"',
-        'description': 'TurtleSim Node',
+        'command': f'"TODO"',
+        'description': 'MuSoHu_Helmet_Nodes',
         'status': 'stopped',
         'pid': None
     },
     'rviz2': {
-        'command': f'docker exec --user ubuntu -e DISPLAY=:1 {DOCKER_CONTAINER} bash -c "source /opt/ros/humble/setup.bash && rviz2"',
+        'command': f'"TODO"',
         'description': 'RViz2 Visualization',
         'status': 'stopped',
         'pid': None
@@ -36,6 +37,14 @@ ROS2_SCRIPTS = {
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/disk-space')
+def disk_space():
+    return render_template('disk_space.html')
+
+@app.route('/logs')
+def logs():
+    return render_template('logs.html')
 
 @app.route('/api/scripts', methods=['GET'])
 def get_scripts():
@@ -49,6 +58,111 @@ def get_scripts():
             ROS2_SCRIPTS[script_id]['pid'] = None
     
     return jsonify(ROS2_SCRIPTS)
+
+@app.route('/api/disk-space', methods=['GET'])
+def get_disk_space():
+    try:
+        # Get disk space statistics for the current directory
+        total, used, free = shutil.disk_usage('/')
+
+        # Convert bytes to GB
+        total_gb = total / (1024 ** 3)
+        used_gb = used / (1024 ** 3)
+        free_gb = free / (1024 ** 3)
+
+        disk_info = {
+            'total': f'{total_gb:.2f} GB',
+            'used': f'{used_gb:.2f} GB',
+            'free': f'{free_gb:.2f} GB',
+            'percent_used': f'{(used / total) * 100:.1f}%'
+        }
+
+        logger.info(f'Disk space checked: {disk_info}')
+        return jsonify(disk_info)
+    except Exception as e:
+        logger.error(f'Failed to get disk space: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/logs', methods=['GET'])
+def get_logs():
+    try:
+        # Get log source from query parameter (default: 'app')
+        log_source = request.args.get('source', 'app')
+
+        # Define available log sources
+        log_files = {
+            'app': 'logs/musohu.log',
+            'ros2': 'src/install/helmet_bringup/share/helmet_bringup/config/ros2.log',
+            'helmet': 'src/install/helmet_bringup/share/helmet_bringup/config/helmet.log'
+        }
+
+        log_file = log_files.get(log_source, log_files['app'])
+        logs = []
+
+        if os.path.exists(log_file):
+            with open(log_file, 'r') as f:
+                lines = f.readlines()
+                # Get last 100 lines
+                lines = lines[-100:]
+
+                for line in lines:
+                    line = line.strip()
+                    if line:
+                        # Parse log format: [timestamp] LEVEL: message
+                        parts = line.split('] ', 1)
+                        if len(parts) == 2:
+                            timestamp = parts[0].replace('[', '')
+                            rest = parts[1]
+                            level_parts = rest.split(': ', 1)
+                            if len(level_parts) == 2:
+                                level = level_parts[0]
+                                message = level_parts[1]
+                                logs.append({
+                                    'timestamp': timestamp,
+                                    'level': level,
+                                    'message': message
+                                })
+                            else:
+                                logs.append({
+                                    'timestamp': timestamp,
+                                    'level': 'INFO',
+                                    'message': rest
+                                })
+                        else:
+                            logs.append({
+                                'timestamp': '',
+                                'level': 'INFO',
+                                'message': line
+                            })
+        else:
+            return jsonify({'logs': [], 'error': f'Log file not found: {log_file}'})
+
+        return jsonify({'logs': logs, 'source': log_source})
+    except Exception as e:
+        logger.error(f'Failed to read logs: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/logs/sources', methods=['GET'])
+def get_log_sources():
+    """Return available log sources and their paths"""
+    sources = {
+        'app': {
+            'name': 'Application Logs',
+            'path': 'logs/musohu.log',
+            'exists': os.path.exists('logs/musohu.log')
+        },
+        'ros2': {
+            'name': 'ROS2 Logs',
+            'path': 'src/install/helmet_bringup/share/helmet_bringup/config/ros2.log',
+            'exists': os.path.exists('src/install/helmet_bringup/share/helmet_bringup/config/ros2.log')
+        },
+        'helmet': {
+            'name': 'Helmet Bringup Logs',
+            'path': 'src/install/helmet_bringup/share/helmet_bringup/config/helmet.log',
+            'exists': os.path.exists('src/install/helmet_bringup/share/helmet_bringup/config/helmet.log')
+        }
+    }
+    return jsonify(sources)
 
 @app.route('/api/scripts/<script_id>/start', methods=['POST'])
 def start_script(script_id):

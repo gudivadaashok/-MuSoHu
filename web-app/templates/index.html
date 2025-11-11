@@ -15,12 +15,17 @@
             <h1>MuSoHu</h1>
             <p class="subtitle">Multi-Modal Social Human Navigation Dataset</p>
         </div>
-        
+
+        <div class="nav-links">
+            <a href="/disk-space" class="nav-link">View Disk Space</a>
+            <a href="/logs" class="nav-link">View Logs</a>
+        </div>
+
         <!-- Toast Container -->
         <div id="toast-container"></div>
-        
+
         <div id="scripts-container"></div>
-        
+
         <footer class="footer">
             <p>Contact us at <a href="https://robotixx.cs.gmu.edu/index.html" target="_blank" rel="noopener noreferrer">RobotiXX Lab</a></p>
         </footer>
@@ -32,24 +37,24 @@
             const toastContainer = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
-            
+
             const icons = {
                 success: '✓',
                 error: '✗',
                 info: 'ℹ'
             };
-            
+
             toast.innerHTML = `
                 <div class="toast-icon">${icons[type] || icons.info}</div>
                 <div class="toast-message">${message}</div>
                 <button class="toast-close" onclick="this.parentElement.remove()">×</button>
             `;
-            
+
             toastContainer.appendChild(toast);
-            
+
             // Trigger animation
             setTimeout(() => toast.classList.add('show'), 10);
-            
+
             // Auto-remove after 4 seconds
             setTimeout(() => {
                 toast.classList.remove('show');
@@ -60,20 +65,21 @@
         async function loadScripts() {
             const response = await fetch('/api/scripts');
             const scripts = await response.json();
-            
+
             const container = document.getElementById('scripts-container');
             container.innerHTML = '';
-            
+
             for (const [id, script] of Object.entries(scripts)) {
                 const card = createScriptCard(id, script);
                 container.appendChild(card);
             }
         }
 
+
         function createScriptCard(id, script) {
             const card = document.createElement('div');
             card.className = 'script-card';
-            
+
             const isRunning = script.status === 'running';
             const statusText = isRunning 
                 ? `🟢 Running${script.pid ? ` (PID: ${script.pid})` : ''}`
@@ -119,7 +125,7 @@
 
         // Load scripts on page load
         loadScripts();
-        
+
         // Refresh every 5 seconds
         setInterval(loadScripts, 5000);
     </script>

@@ -3,9 +3,8 @@
 import os
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
@@ -24,34 +23,38 @@ def generate_launch_description():
         description='Frame ID for IMU data'
     )
     
+    baud_arg = DeclareLaunchArgument(
+        'baud',
+        default_value='9600',
+        description='Serial baud rate'
+    )
+    
     # Get launch configurations
     device = LaunchConfiguration('device')
     frame_id = LaunchConfiguration('frame_id')
+    baud = LaunchConfiguration('baud')
     
-    # Get package directories
-    helmet_bringup_dir = FindPackageShare('helmet_bringup')
-    
-    # IMU node
+    ##################################################
+    # TODO: fix to use a config file imu_params.yaml
+    ##################################################
+
+    # IMU node - using direct parameters instead of config file
     imu_node = Node(
         package='witmotion_ros2',
-        executable='witmotion_ros',
+        executable='witmotion_ros2',
         name='imu_node',
-        parameters=[
-            PathJoinSubstitution([
-                helmet_bringup_dir,
-                'config',
-                'imu_params.yaml'
-            ]),
-            {
-                'device': device,
-                'frame_id': frame_id,
-            }
-        ],
+        parameters=[{
+            'port': device,
+            'baud': baud,
+            'frame_id': frame_id,
+            'rate': 10.0,
+        }],
         output='screen'
     )
     
     return LaunchDescription([
         device_arg,
         frame_id_arg,
+        baud_arg,
         imu_node,
     ])

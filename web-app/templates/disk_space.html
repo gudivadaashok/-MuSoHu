@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disk Space Monitor - MuSoHu</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://cs.gmu.edu/~xiao/xuesu_website_files/RobotiXX_gmu.gif" alt="RobotiXX Logo" class="logo">
+        </div>
+        <div class="title-section">
+            <h1>Disk Space Monitor</h1>
+            <p class="subtitle">System Storage Information</p>
+        </div>
+
+        <div class="nav-links">
+            <a href="/" class="nav-link">Back to Scripts</a>
+            <a href="/logs" class="nav-link">View Logs</a>
+        </div>
+
+        <div class="disk-space-full">
+            <div id="disk-info-full" class="disk-info-full">Loading...</div>
+        </div>
+
+        <footer class="footer">
+            <p>Contact us at <a href="https://robotixx.cs.gmu.edu/index.html" target="_blank" rel="noopener noreferrer">RobotiXX Lab</a></p>
+        </footer>
+    </div>
+
+    <script>
+        async function loadDiskSpace() {
+            try {
+                const response = await fetch('/api/disk-space');
+                const diskInfo = await response.json();
+
+                const diskInfoDiv = document.getElementById('disk-info-full');
+
+                if (diskInfo.error) {
+                    diskInfoDiv.innerHTML = `<p class="error">Error: ${diskInfo.error}</p>`;
+                } else {
+                    const percentUsed = parseFloat(diskInfo.percent_used);
+                    const statusClass = percentUsed > 80 ? 'danger' : percentUsed > 60 ? 'warning' : 'healthy';
+                    const statusIcon = percentUsed > 80 ? '!' : percentUsed > 60 ? '!' : '';
+
+                    diskInfoDiv.innerHTML = `
+                        <div class="disk-overview">
+                            <div class="disk-status-badge ${statusClass}">
+                                ${statusIcon} ${percentUsed > 80 ? 'Critical' : percentUsed > 60 ? 'Warning' : 'Healthy'}
+                            </div>
+                        </div>
+
+                        <div class="disk-stats-grid">
+                            <div class="disk-stat-card">
+                                <div class="stat-label">Total Space</div>
+                                <div class="stat-value">${diskInfo.total}</div>
+                            </div>
+
+                            <div class="disk-stat-card">
+                                <div class="stat-label">Used Space</div>
+                                <div class="stat-value">${diskInfo.used}</div>
+                            </div>
+
+                            <div class="disk-stat-card">
+                                <div class="stat-label">Free Space</div>
+                                <div class="stat-value">${diskInfo.free}</div>
+                            </div>
+
+                            <div class="disk-stat-card">
+                                <div class="stat-label">Usage</div>
+                                <div class="stat-value ${statusClass}">${diskInfo.percent_used}</div>
+                            </div>
+                        </div>
+
+                        <div class="disk-bar-container">
+                            <div class="disk-bar-label">Storage Usage</div>
+                            <div class="disk-bar">
+                                <div class="disk-bar-fill ${statusClass}" style="width: ${diskInfo.percent_used}">
+                                    <span class="disk-bar-text">${diskInfo.percent_used}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                const diskInfoDiv = document.getElementById('disk-info-full');
+                diskInfoDiv.innerHTML = `<p class="error">Failed to load disk space: ${error.message}</p>`;
+            }
+        }
+
+        // Load disk space on page load
+        loadDiskSpace();
+
+        // Refresh every 10 seconds
+        setInterval(loadDiskSpace, 10000);
+    </script>
+</body>
+</html>

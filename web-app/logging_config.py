@@ -6,7 +6,7 @@ def setup_logging(app):
     """Configure logging for the Flask application."""
     
     # Create logs directory if it doesn't exist
-    log_dir = '/app/logs'
+    log_dir = '../logs'
     os.makedirs(log_dir, exist_ok=True)
     
     # Configure root logger

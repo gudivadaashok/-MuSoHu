@@ -199,54 +199,13 @@ if [ -d "$VENV_PATH" ]; then
     rm -rf "$VENV_PATH"
 fi
 
-# Create new virtual environment
-python3 -m venv "$VENV_PATH"
-if [ $? -eq 0 ]; then
-    log_success "Virtual environment created successfully at $VENV_PATH"
-    
-    # Activate and install packages
-    source "$VENV_PATH/bin/activate"
-    
-    # Upgrade pip in virtual environment
-    pip install --upgrade pip setuptools wheel
-    
-    # Install required packages
-    log_info "Installing Python packages in virtual environment..."
-    pip install pyusb click pyaudio pixel-ring transforms3d
-    
-    if [ $? -eq 0 ]; then
-        log_success "All Python packages installed successfully in virtual environment"
-        log_info "Virtual environment location: $VENV_PATH"
-        log_info "To use this environment, run: source $VENV_PATH/bin/activate"
-        
-        # Create activation script for easy access
-        cat > "$HOME/activate_musohu_env.sh" << 'EOF'
-#!/bin/bash
-echo "Activating MuSoHu Python environment..."
-source ~/musohu_python_env/bin/activate
-echo "Environment activated. Python packages are now available."
-echo "To deactivate, run: deactivate"
-EOF
-        chmod +x "$HOME/activate_musohu_env.sh"
-        log_info "Created activation script at: $HOME/activate_musohu_env.sh"
-        
-    else
-        log_error "Failed to install packages in virtual environment"
-    fi
-    
-    deactivate
-else
-    log_error "Failed to create virtual environment"
-    log_info "Attempting system-wide installation as last resort..."
-    
-    # Last resort: try to fix pip completely and install globally
-    log_info "Attempting to rebuild pip environment..."
-    sudo apt-get install -y --reinstall python3-pip python3-setuptools python3-wheel
-    
-    # Try to install with pip system-wide but with --break-system-packages flag
-    log_info "Installing with --break-system-packages flag..."
-    python3 -m pip install --break-system-packages pyusb click pyaudio pixel-ring transforms3d || log_error "All installation methods failed"
-fi
+
+########################################################################
+#
+# TODO Create new virtual environment for ros2_musohu_ws
+# move all the python package installations into that environment
+#
+########################################################################
 
 #***********************************************************************
 # Install additional ROS2 dependencies and fix transforms3d compatibility
