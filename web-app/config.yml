@@ -15,7 +15,7 @@ logging:
   # ROS2 log file settings
   ros2_log:
     enabled: true
-    path: src/install/helmet_bringup/share/helmet_bringup/config/ros2.log
+    path: src/install/helmet_bringup/share/helmet_bringup/config/
     level: INFO
     max_size: 10485760
     backup_count: 5
@@ -23,7 +23,7 @@ logging:
   # Helmet bringup log file settings
   helmet_log:
     enabled: true
-    path: src/install/helmet_bringup/share/helmet_bringup/config/helmet.log
+    path: src/install/helmet_bringup/share/helmet_bringup/config/
     level: INFO
     max_size: 10485760
     backup_count: 5
@@ -51,17 +51,18 @@ refresh_intervals:
 # Log viewer settings
 log_viewer:
   max_lines: 100  # Maximum number of log lines to display
+  # Directories to scan for all files (.log, .txt, etc.)
+  scan_directories:
+    - path: logs/
+      enabled: true
+      name_prefix: ""  # No prefix for files in main logs folder
+    - path: src/install/helmet_bringup/share/helmet_bringup/config/
+      enabled: true
+      name_prefix: "ROS2 - "  # Prefix for ROS2 log files
+  # Individual sources (optional, for specific files outside scan directories)
   sources:
     - id: app
       name: Application Logs
-      path: logs/musohu.log
-      enabled: true
-    - id: ros2
-      name: ROS2 Logs
-      path: src/install/helmet_bringup/share/helmet_bringup/config/ros2.log
-      enabled: true
-    - id: helmet
-      name: Helmet Bringup Logs
-      path: src/install/helmet_bringup/share/helmet_bringup/config/helmet.log
-      enabled: true
+      path: logs/
+      enabled: false  # Disabled since logs/ is scanned automatically
 

@@ -97,29 +97,54 @@ def get_disk_space():
 @app.route('/api/logs', methods=['GET'])
 def get_logs():
     try:
-        # Get log source from query parameter (default: 'app')
-        log_source = request.args.get('source', 'app')
+        # Get log source from query parameter (default: 'musohu')
+        log_source = request.args.get('source', 'musohu')
 
         # Load log sources from config
         log_viewer_config = config.get('log_viewer', {})
-        sources = log_viewer_config.get('sources', [])
         max_lines = log_viewer_config.get('max_lines', 100)
 
-        # Build log files mapping from config
+        # Build log files mapping by scanning directories for ALL files
         log_files = {}
+        scan_directories = log_viewer_config.get('scan_directories', [])
+
+        for dir_config in scan_directories:
+            if not dir_config.get('enabled', True):
+                continue
+
+            dir_path = dir_config.get('path', '')
+
+            if os.path.exists(dir_path) and os.path.isdir(dir_path):
+                try:
+                    for filename in os.listdir(dir_path):
+                        file_path = os.path.join(dir_path, filename)
+                        # Only include files, not directories
+                        if os.path.isfile(file_path):
+                            log_id = filename.replace('.', '_')
+                            # Handle ID collisions
+                            if log_id in log_files:
+                                log_id = f"{os.path.basename(dir_path.rstrip('/'))}_{log_id}"
+                            log_files[log_id] = file_path
+                except Exception as e:
+                    logger.error(f"Error scanning directory {dir_path}: {e}")
+
+        # Add individual sources from config
+        sources = log_viewer_config.get('sources', [])
         for source in sources:
             if source.get('enabled', True):
                 log_files[source['id']] = source['path']
 
-        # Fallback to defaults if config is empty
+        # Fallback to scanning logs/ folder if nothing configured
         if not log_files:
-            log_files = {
-                'app': 'logs/musohu.log',
-                'ros2': 'src/install/helmet_bringup/share/helmet_bringup/config/ros2.log',
-                'helmet': 'src/install/helmet_bringup/share/helmet_bringup/config/helmet.log'
-            }
+            logs_dir = 'logs'
+            if os.path.exists(logs_dir) and os.path.isdir(logs_dir):
+                for filename in os.listdir(logs_dir):
+                    file_path = os.path.join(logs_dir, filename)
+                    if os.path.isfile(file_path):
+                        log_id = filename.replace('.', '_')
+                        log_files[log_id] = file_path
 
-        log_file = log_files.get(log_source, log_files.get('app', 'logs/musohu.log'))
+        log_file = log_files.get(log_source, log_files.get('musohu', 'logs/musohu.log'))
         logs = []
 
         if os.path.exists(log_file):
@@ -167,11 +192,46 @@ def get_logs():
 
 @app.route('/api/logs/sources', methods=['GET'])
 def get_log_sources():
-    """Return available log sources and their paths from config"""
-    log_viewer_config = config.get('log_viewer', {})
-    sources_config = log_viewer_config.get('sources', [])
-
+    """Return available log sources - auto-discover all files from configured directories"""
     sources = {}
+
+    # Get scan directories from config
+    log_viewer_config = config.get('log_viewer', {})
+    scan_directories = log_viewer_config.get('scan_directories', [])
+
+    # Scan each configured directory for ALL files
+    for dir_config in scan_directories:
+        if not dir_config.get('enabled', True):
+            continue
+
+        dir_path = dir_config.get('path', '')
+        name_prefix = dir_config.get('name_prefix', '')
+
+        if os.path.exists(dir_path) and os.path.isdir(dir_path):
+            try:
+                for filename in sorted(os.listdir(dir_path)):
+                    file_path = os.path.join(dir_path, filename)
+                    # Skip directories, only include files
+                    if os.path.isfile(file_path):
+                        # Create unique ID from filename
+                        log_id = filename.replace('.', '_')
+                        # If there's a collision, add directory name to make it unique
+                        if log_id in sources:
+                            log_id = f"{os.path.basename(dir_path.rstrip('/'))}_{log_id}"
+
+                        # Create display name
+                        display_name = f"{name_prefix}{filename}"
+
+                        sources[log_id] = {
+                            'name': display_name,
+                            'path': file_path,
+                            'exists': True
+                        }
+            except Exception as e:
+                logger.error(f"Error scanning directory {dir_path}: {e}")
+
+    # Add individual sources from config (for files outside scan directories)
+    sources_config = log_viewer_config.get('sources', [])
     for source in sources_config:
         if source.get('enabled', True):
             sources[source['id']] = {
@@ -180,25 +240,19 @@ def get_log_sources():
                 'exists': os.path.exists(source['path'])
             }
 
-    # Fallback to defaults if config is empty
+    # Fallback: scan logs/ folder if no config
     if not sources:
-        sources = {
-            'app': {
-                'name': 'Application Logs',
-                'path': 'logs/musohu.log',
-                'exists': os.path.exists('logs/musohu.log')
-            },
-            'ros2': {
-                'name': 'ROS2 Logs',
-                'path': 'src/install/helmet_bringup/share/helmet_bringup/config/ros2.log',
-                'exists': os.path.exists('src/install/helmet_bringup/share/helmet_bringup/config/ros2.log')
-            },
-            'helmet': {
-                'name': 'Helmet Bringup Logs',
-                'path': 'src/install/helmet_bringup/share/helmet_bringup/config/helmet.log',
-                'exists': os.path.exists('src/install/helmet_bringup/share/helmet_bringup/config/helmet.log')
-            }
-        }
+        logs_dir = 'logs'
+        if os.path.exists(logs_dir) and os.path.isdir(logs_dir):
+            for filename in sorted(os.listdir(logs_dir)):
+                file_path = os.path.join(logs_dir, filename)
+                if os.path.isfile(file_path):
+                    log_id = filename.replace('.', '_')
+                    sources[log_id] = {
+                        'name': filename,
+                        'path': file_path,
+                        'exists': True
+                    }
 
     return jsonify(sources)
 
