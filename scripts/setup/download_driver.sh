@@ -11,8 +11,8 @@ source "$SCRIPT_DIR/../utils/logging_config.sh"
 log_info "Starting driver download process..."
 
 
-# Create workspace directory if it doesn't exist for ROS2_MuSoHu
-WORKSPACE_DIR="$HOME/ROS2_MuSoHu/src"
+# Create workspace directory if it doesn't exist for ros2_musohu_ws
+WORKSPACE_DIR="$HOME/ros2_musohu_ws/src"
 if [ ! -d "$WORKSPACE_DIR" ]; then
     log_info "Creating workspace directory at $WORKSPACE_DIR"
     mkdir -p "$WORKSPACE_DIR"
