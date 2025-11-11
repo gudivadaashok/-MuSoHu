@@ -167,6 +167,16 @@ fi
 # Install Python dependencies for ReSpeaker
 #***********************************************************************
 
+log_info "Installing system dependencies for ReSpeaker..."
+log_info "Installing PortAudio development files..."
+sudo apt-get update
+sudo apt-get install -y portaudio19-dev libasound2-dev libsndfile1-dev
+if [ $? -eq 0 ]; then
+    log_success "System dependencies installed successfully"
+else
+    log_error "Failed to install system dependencies"
+fi
+
 log_info "Installing Python dependencies for ReSpeaker..."
 log_info "Installing: pyusb, click, pyaudio, pixel-ring"
 pip3 install --no-cache-dir pyusb click pyaudio pixel-ring
