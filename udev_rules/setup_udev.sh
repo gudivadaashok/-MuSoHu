@@ -10,8 +10,31 @@
 #***********************************************************************
 
 # Source logging configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get the actual directory where this script file is located
+# First, get the absolute path of the script
+if [[ "${BASH_SOURCE[0]}" == /* ]]; then
+    # Already absolute path
+    SCRIPT_PATH="${BASH_SOURCE[0]}"
+else
+    # Relative path, make it absolute
+    SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+fi
+
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+
+# Verify this is the udev_rules directory by checking for the rules subdirectory
+if [[ ! -d "$SCRIPT_DIR/rules" ]]; then
+    echo "ERROR: This script must be run from the udev_rules directory"
+    echo "Current directory: $SCRIPT_DIR"
+    echo "Expected to find: $SCRIPT_DIR/rules"
+    echo "Please run this script from: .../MuSoHu/udev_rules/"
+    exit 1
+fi
+
 source "$SCRIPT_DIR/../scripts/utils/logging_config.sh"
+
+log_debug "Detected script path: $SCRIPT_PATH"
+log_debug "Script directory: $SCRIPT_DIR"
 
 log_debug "Script directory: $SCRIPT_DIR"
 log_info "Setting up udev rules for MuSoHu devices..."
