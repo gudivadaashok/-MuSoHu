@@ -19,6 +19,39 @@ log_separator
 UDEV_RULES_DIR="/etc/udev/rules.d"
 RULES_SOURCE_DIR="$SCRIPT_DIR/rules"
 
+# Debug: Show paths being used
+log_info "Script directory: $SCRIPT_DIR"
+log_info "Rules source directory: $RULES_SOURCE_DIR"
+
+# Check if rules directory exists, try alternative paths if not
+if [ ! -d "$RULES_SOURCE_DIR" ]; then
+    log_warning "Primary rules directory not found: $RULES_SOURCE_DIR"
+    
+    # Try alternative paths
+    ALTERNATIVE_PATHS=(
+        "$(dirname "$SCRIPT_DIR")/udev_rules/rules"
+        "$(pwd)/udev_rules/rules"
+        "$(pwd)/rules"
+    )
+    
+    for alt_path in "${ALTERNATIVE_PATHS[@]}"; do
+        if [ -d "$alt_path" ]; then
+            log_info "Found rules directory at: $alt_path"
+            RULES_SOURCE_DIR="$alt_path"
+            break
+        fi
+    done
+fi
+
+log_info "Using rules source directory: $RULES_SOURCE_DIR"
+if [ -d "$RULES_SOURCE_DIR" ]; then
+    log_info "Available rules files:"
+    ls -la "$RULES_SOURCE_DIR/" || log_warning "Could not list rules directory"
+else
+    log_error "Rules source directory does not exist: $RULES_SOURCE_DIR"
+    exit 1
+fi
+
 # Check if running with sudo
 if [ "$EUID" -ne 0 ]; then
     log_error "This script must be run with sudo"
