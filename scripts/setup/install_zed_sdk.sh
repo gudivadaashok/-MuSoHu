@@ -112,25 +112,78 @@ log_info "Downloading ZED SDK..."
 
 # Construct the download URL and filename
 ZED_SDK_FILENAME="ZED_SDK_Linux_Ubuntu${UBUNTU_RELEASE_YEAR}.run"
-ZED_SDK_URL="https://download.stereolabs.com/zedsdk/${ZED_SDK_MAJOR}.${ZED_SDK_MINOR}/cu${CUDA_MAJOR}/ubuntu${UBUNTU_RELEASE_YEAR}"
+
+# Try different URL formats as Stereolabs may have changed their download structure
+ZED_SDK_URL=https://download.stereolabs.com/zedsdk/5.1/l4t36.4/jetsons
 
 log_debug "URL components:"
 log_debug "  ZED_SDK_MAJOR: '$ZED_SDK_MAJOR'"
 log_debug "  ZED_SDK_MINOR: '$ZED_SDK_MINOR'"
 log_debug "  CUDA_MAJOR: '$CUDA_MAJOR'"
 log_debug "  UBUNTU_RELEASE_YEAR: '$UBUNTU_RELEASE_YEAR'"
-log_info "Download URL: $ZED_SDK_URL"
+
 log_info "Filename: $ZED_SDK_FILENAME"
+log_info "Will try multiple URL formats to find the correct download"
 
 # Download the ZED SDK
-wget -q -O "$ZED_SDK_FILENAME" "$ZED_SDK_URL"
+log_info "Attempting to download ZED SDK..."
 
-if [ $? -eq 0 ]; then
-    log_success "ZED SDK downloaded successfully"
+# Try different URL formats
+download_success=false
+for ZED_SDK_URL in "${ZED_SDK_URLS[@]}"; do
+    log_info "Trying URL: $ZED_SDK_URL"
+    
+    # Check if URL is accessible
+    if curl -s --head "$ZED_SDK_URL" 2>/dev/null | head -n 1 | grep -q "200 OK"; then
+        log_info "URL is accessible, attempting download..."
+        
+        # Download with progress indication
+        if wget --progress=dot -O "$ZED_SDK_FILENAME" "$ZED_SDK_URL" 2>&1 | \
+           while read line; do log_debug "$line"; done; then
+            
+            # Verify downloaded file
+            if [ -f "$ZED_SDK_FILENAME" ] && [ -s "$ZED_SDK_FILENAME" ]; then
+                # Check if it's actually an installer
+                if file "$ZED_SDK_FILENAME" 2>/dev/null | grep -q "HTML\|text"; then
+                    log_warning "Downloaded file is HTML/text, not binary - URL may be incorrect"
+                    rm -f "$ZED_SDK_FILENAME"
+                    continue
+                else
+                    log_success "Downloaded valid binary installer"
+                    download_success=true
+                    break
+                fi
+            else
+                log_warning "Download failed or file is empty"
+                rm -f "$ZED_SDK_FILENAME"
+                continue
+            fi
+        else
+            log_warning "wget failed for this URL"
+            continue
+        fi
+    else
+        log_debug "URL not accessible or returns error"
+    fi
+done
+
+if [ "$download_success" = true ]; then
+    log_success "ZED SDK download completed successfully"
+    log_info "Downloaded file: $ZED_SDK_FILENAME"
+    log_info "File size: $(du -h "$ZED_SDK_FILENAME" | cut -f1)"
 else
-    log_error "Failed to download ZED SDK"
-    log_error "Please check if the URL is correct and accessible"
-    log_info "URL attempted: $ZED_SDK_URL"
+    log_error "Failed to download ZED SDK from any URL"
+    log_error "All attempted URLs failed or returned invalid files"
+    log_info "Attempted URLs:"
+    for url in "${ZED_SDK_URLS[@]}"; do
+        log_info "  $url"
+    done
+    log_info ""
+    log_info "Please try one of the following:"
+    log_info "  1. Check the ZED SDK download page: https://www.stereolabs.com/developers/release/"
+    log_info "  2. Manually download the installer and place it in the current directory"
+    log_info "  3. Verify the ZED SDK version and CUDA version compatibility"
+    log_info "  4. Check your internet connection"
     exit 1
 fi
 
