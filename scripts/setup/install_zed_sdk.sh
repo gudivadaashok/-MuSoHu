@@ -69,6 +69,13 @@ else
     log_info "If needed, you can install them later with: pip install --user numpy opencv-python"
 fi
 
+# Get the original user who called sudo (if available)
+if [ -n "$SUDO_USER" ]; then
+    log_info "Note: When running additional pip installs later, use:"
+    log_info "  sudo -u $SUDO_USER pip install --user <package_name>"
+    log_info "  This will install packages for user '$SUDO_USER' instead of root"
+fi
+
 #***********************************************************************
 # Download and install ZED SDK
 #***********************************************************************
