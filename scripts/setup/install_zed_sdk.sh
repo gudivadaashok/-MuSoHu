@@ -31,7 +31,7 @@ fi
 log_info "Updating package lists..."
 apt-get update -y || true
 
-log_info "Installing dependencies..."
+log_info "Installing ZED SDK dependencies..."
 apt-get install --no-install-recommends \
     lsb-release \
     wget \
@@ -39,41 +39,29 @@ apt-get install --no-install-recommends \
     zstd \
     udev \
     sudo \
-    python3 \
-    python3-pip \
-    python3-numpy \
-    python3-opencv \
     libpng-dev \
     libgomp1 \
     -y
 
 if [ $? -eq 0 ]; then
-    log_success "Dependencies installed successfully"
+    log_success "ZED SDK dependencies installed successfully"
 else
-    log_error "Failed to install dependencies"
+    log_error "Failed to install ZED SDK dependencies"
     exit 1
 fi
 
 #***********************************************************************
-# Install Python packages (using system packages to avoid pip warnings)
+# Install Python packages
 #***********************************************************************
 
 log_info "Installing Python packages..."
-log_info "Using system packages (python3-numpy, python3-opencv) to avoid pip root warnings"
+log_info "Running separate Python packages installation script..."
 
-# Verify Python packages are installed
-if python3 -c "import numpy, cv2" 2>/dev/null; then
-    log_success "Python packages (numpy, opencv) are available"
+# Run the Python packages installation script
+if bash "$SCRIPT_DIR/install_python_packages.sh"; then
+    log_success "Python packages installation completed"
 else
-    log_warning "Python packages may not be properly installed"
-    log_info "If needed, you can install them later with: pip install --user numpy opencv-python"
-fi
-
-# Get the original user who called sudo (if available)
-if [ -n "$SUDO_USER" ]; then
-    log_info "Note: When running additional pip installs later, use:"
-    log_info "  sudo -u $SUDO_USER pip install --user <package_name>"
-    log_info "  This will install packages for user '$SUDO_USER' instead of root"
+    log_warning "Python packages installation had issues, but continuing with ZED SDK installation"
 fi
 
 #***********************************************************************
@@ -149,8 +137,12 @@ log_success "Cleanup completed"
 log_separator
 log_success "ZED SDK installation completed!"
 log_info "Installation mode: Runtime only, CUDA skipped"
+log_info "Python packages installed via: install_python_packages.sh"
 log_separator
 log_info "You may need to:"
 log_info "  1. Reboot the system or reconnect USB devices"
 log_info "  2. Add your user to the necessary groups"
 log_info "  3. Check ZED camera permissions with: ls -l /dev/video*"
+log_info ""
+log_info "For additional Python packages, run:"
+log_info "  sudo bash scripts/setup/install_python_packages.sh"
