@@ -13,44 +13,13 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../scripts/utils/logging_config.sh"
 
+log_debug "Script directory: $SCRIPT_DIR"
 log_info "Setting up udev rules for MuSoHu devices..."
 log_separator
 
 UDEV_RULES_DIR="/etc/udev/rules.d"
 RULES_SOURCE_DIR="$SCRIPT_DIR/rules"
-
-# Debug: Show paths being used
-log_info "Script directory: $SCRIPT_DIR"
-log_info "Rules source directory: $RULES_SOURCE_DIR"
-
-# Check if rules directory exists, try alternative paths if not
-if [ ! -d "$RULES_SOURCE_DIR" ]; then
-    log_warning "Primary rules directory not found: $RULES_SOURCE_DIR"
-    
-    # Try alternative paths
-    ALTERNATIVE_PATHS=(
-        "$(dirname "$SCRIPT_DIR")/udev_rules/rules"
-        "$(pwd)/udev_rules/rules"
-        "$(pwd)/rules"
-    )
-    
-    for alt_path in "${ALTERNATIVE_PATHS[@]}"; do
-        if [ -d "$alt_path" ]; then
-            log_info "Found rules directory at: $alt_path"
-            RULES_SOURCE_DIR="$alt_path"
-            break
-        fi
-    done
-fi
-
-log_info "Using rules source directory: $RULES_SOURCE_DIR"
-if [ -d "$RULES_SOURCE_DIR" ]; then
-    log_info "Available rules files:"
-    ls -la "$RULES_SOURCE_DIR/" || log_warning "Could not list rules directory"
-else
-    log_error "Rules source directory does not exist: $RULES_SOURCE_DIR"
-    exit 1
-fi
+log_debug "Looking for rules in: $RULES_SOURCE_DIR"
 
 # Check if running with sudo
 if [ "$EUID" -ne 0 ]; then
@@ -65,6 +34,7 @@ fi
 
 log_info "Copying ReSpeaker udev rules..."
 RESPEAKER_RULES="$RULES_SOURCE_DIR/40-respeaker.rules"
+log_debug "Checking for ReSpeaker rules at: $RESPEAKER_RULES"
 
 if [ -f "$RESPEAKER_RULES" ]; then
     cp "$RESPEAKER_RULES" "$UDEV_RULES_DIR/"
@@ -75,6 +45,12 @@ if [ -f "$RESPEAKER_RULES" ]; then
     fi
 else
     log_warning "ReSpeaker rules file not found: $RESPEAKER_RULES"
+    log_debug "Available files in rules directory:"
+    if [ -d "$RULES_SOURCE_DIR" ]; then
+        ls -la "$RULES_SOURCE_DIR" 2>/dev/null || log_debug "Cannot list rules directory contents"
+    else
+        log_debug "Rules directory does not exist: $RULES_SOURCE_DIR"
+    fi
 fi
 
 #***********************************************************************
@@ -83,6 +59,7 @@ fi
 
 log_info "Copying CH340/CH341 udev rules..."
 CH340_RULES="$RULES_SOURCE_DIR/99-imu.rules"
+log_debug "Checking for CH340 rules at: $CH340_RULES"
 
 if [ -f "$CH340_RULES" ]; then
     cp "$CH340_RULES" "$UDEV_RULES_DIR/"
@@ -101,6 +78,8 @@ fi
 
 log_info "Copying ZED Camera udev rules..."
 ZED_RULES="$RULES_SOURCE_DIR/40-zed.rules"
+log_debug "Checking for ZED rules at: $ZED_RULES"
+
 if [ -f "$ZED_RULES" ]; then
     cp "$ZED_RULES" "$UDEV_RULES_DIR/"
     if [ $? -eq 0 ]; then
