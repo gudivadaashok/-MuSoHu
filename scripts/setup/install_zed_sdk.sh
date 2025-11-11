@@ -12,6 +12,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../utils/logging_config.sh"
 source "$SCRIPT_DIR/../utils/detect_system_info.sh"
 
+# Run system detection if variables are not already set
+if [ -z "$UBUNTU_RELEASE_YEAR" ] || [ -z "$CUDA_MAJOR" ] || [ -z "$CUDA_MINOR" ]; then
+    log_info "Detecting system information..."
+    detect_all
+fi
+
 log_info "Starting ZED SDK installation..."
 log_separator
 
@@ -28,6 +34,20 @@ log_info "  Ubuntu Release Year: $UBUNTU_RELEASE_YEAR"
 log_info "  CUDA Major Version: $CUDA_MAJOR"
 log_info "  CUDA Minor Version: $CUDA_MINOR"
 log_info "  ZED SDK Version: $ZED_SDK_MAJOR.$ZED_SDK_MINOR"
+
+# Validate that all required variables are set
+if [ -z "$UBUNTU_RELEASE_YEAR" ] || [ "$UBUNTU_RELEASE_YEAR" = "unknown" ]; then
+    log_error "Ubuntu release year could not be detected or is unknown"
+    log_info "Please set manually: export UBUNTU_RELEASE_YEAR=22"
+    exit 1
+fi
+
+if [ -z "$CUDA_MAJOR" ] || [ "$CUDA_MAJOR" = "unknown" ]; then
+    log_error "CUDA major version could not be detected or is unknown"
+    log_info "Please set manually: export CUDA_MAJOR=12"
+    exit 1
+fi
+
 log_separator
 
 #***********************************************************************
@@ -94,6 +114,11 @@ log_info "Downloading ZED SDK..."
 ZED_SDK_FILENAME="ZED_SDK_Linux_Ubuntu${UBUNTU_RELEASE_YEAR}.run"
 ZED_SDK_URL="https://download.stereolabs.com/zedsdk/${ZED_SDK_MAJOR}.${ZED_SDK_MINOR}/cu${CUDA_MAJOR}/ubuntu${UBUNTU_RELEASE_YEAR}"
 
+log_debug "URL components:"
+log_debug "  ZED_SDK_MAJOR: '$ZED_SDK_MAJOR'"
+log_debug "  ZED_SDK_MINOR: '$ZED_SDK_MINOR'"
+log_debug "  CUDA_MAJOR: '$CUDA_MAJOR'"
+log_debug "  UBUNTU_RELEASE_YEAR: '$UBUNTU_RELEASE_YEAR'"
 log_info "Download URL: $ZED_SDK_URL"
 log_info "Filename: $ZED_SDK_FILENAME"
 
