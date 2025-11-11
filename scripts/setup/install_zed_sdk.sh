@@ -41,6 +41,8 @@ apt-get install --no-install-recommends \
     sudo \
     python3 \
     python3-pip \
+    python3-numpy \
+    python3-opencv \
     libpng-dev \
     libgomp1 \
     -y
@@ -53,19 +55,18 @@ else
 fi
 
 #***********************************************************************
-# Install Python packages
+# Install Python packages (using system packages to avoid pip warnings)
 #***********************************************************************
 
 log_info "Installing Python packages..."
-# Uncomment the next line if you want to upgrade pip
-#python3 -m pip install --upgrade pip
+log_info "Using system packages (python3-numpy, python3-opencv) to avoid pip root warnings"
 
-python3 -m pip install numpy opencv-python
-
-if [ $? -eq 0 ]; then
-    log_success "Python packages installed successfully"
+# Verify Python packages are installed
+if python3 -c "import numpy, cv2" 2>/dev/null; then
+    log_success "Python packages (numpy, opencv) are available"
 else
-    log_warning "Some Python packages may have failed to install"
+    log_warning "Python packages may not be properly installed"
+    log_info "If needed, you can install them later with: pip install --user numpy opencv-python"
 fi
 
 #***********************************************************************
