@@ -1,7 +1,12 @@
+"""
+Logging configuration module for MuSoHu web application
+Handles YAML-based logging configuration with file rotation and console output
+"""
 import logging
 import os
 from logging.handlers import RotatingFileHandler
 import yaml
+
 
 def load_config():
     """Load configuration from YAML file"""
@@ -10,7 +15,7 @@ def load_config():
         'logging': {
             'app_log': {
                 'enabled': True,
-                'path': '../logs/musohu.log',
+                'path': 'logs/musohu.log',
                 'level': 'INFO',
                 'max_size': 10485760,
                 'backup_count': 5,
@@ -38,8 +43,9 @@ def load_config():
         print(f"Config file not found at {config_path}. Using defaults.")
         return default_config
 
+
 def setup_logging(app):
-    """Configure logging for the Flask application based on YAML config."""
+    """Configure logging for the Flask application based on YAML config"""
     config = load_config()
     log_config = config.get('logging', {})
     app_log_config = log_config.get('app_log', {})
@@ -98,7 +104,3 @@ def setup_logging(app):
     logger.info(f"Logging initialized: {log_path}")
 
     return logger
-    app.logger.setLevel(logging.INFO)
-    app.logger.info('MuSoHu logging configured')
-    
-    return app.logger

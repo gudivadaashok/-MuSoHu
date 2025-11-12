@@ -1,23 +1,30 @@
-from flask import Flask, render_template, jsonify, request
+"""
+MuSoHu Web Application
+Manages ROS2 scripts, displays logs, and monitors system resources
+"""
+from flask import Flask, render_template, jsonify, request, send_file
 from flask_cors import CORS
 import subprocess
 import os
-import signal
 import shutil
 import yaml
 from logging_config import setup_logging
 
+# Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 
-# Load configuration
+
 def load_config():
+    """Load configuration from YAML file"""
     config_path = 'config.yml'
     if os.path.exists(config_path):
         with open(config_path, 'r') as f:
             return yaml.safe_load(f)
     return {}
 
+
+# Load configuration
 config = load_config()
 
 # Setup logging
@@ -26,39 +33,52 @@ logger = setup_logging(app)
 # Store running processes
 running_processes = {}
 
-# Docker container name
-DOCKER_CONTAINER = 'ros2_vnc'
-
 # Define available ROS2 scripts
 ROS2_SCRIPTS = {
-    'turtlesim': {
-        'command': f'"TODO"',
-        'description': 'MuSoHu_Helmet_Nodes',
+    'helmet_nodes': {
+        'command': 'ros2 launch helmet_bringup helmet.launch.py',
+        'description': 'MuSoHu Helmet Nodes',
         'status': 'stopped',
         'pid': None
     },
     'rviz2': {
-        'command': f'"TODO"',
+        'command': 'ros2 run rviz2 rviz2',
         'description': 'RViz2 Visualization',
         'status': 'stopped',
         'pid': None
     }
 }
 
+
+# ============================================================================
+# Page Routes
+# ============================================================================
+
 @app.route('/')
 def index():
+    """Main page - Scripts management"""
     return render_template('index.html')
+
 
 @app.route('/disk-space')
 def disk_space():
+    """Disk space monitoring page"""
     return render_template('disk_space.html')
+
 
 @app.route('/logs')
 def logs():
+    """Log viewer page"""
     return render_template('logs.html')
+
+
+# ============================================================================
+# API Routes - Scripts
+# ============================================================================
 
 @app.route('/api/scripts', methods=['GET'])
 def get_scripts():
+    """Get status of all ROS2 scripts"""
     # Update status based on actual process state
     for script_id in running_processes.copy():
         process = running_processes[script_id]
@@ -70,8 +90,14 @@ def get_scripts():
     
     return jsonify(ROS2_SCRIPTS)
 
+
+# ============================================================================
+# API Routes - System Monitoring
+# ============================================================================
+
 @app.route('/api/disk-space', methods=['GET'])
 def get_disk_space():
+    """Get disk space information"""
     try:
         # Get disk space statistics for the current directory
         total, used, free = shutil.disk_usage('/')
@@ -212,6 +238,11 @@ def get_logs():
         logger.error(f'Failed to read logs: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
+
+# ============================================================================
+# API Routes - Log Management
+# ============================================================================
+
 @app.route('/api/logs/sources', methods=['GET'])
 def get_log_sources():
     """Return available log sources - auto-discover all files from configured directories"""
@@ -281,7 +312,6 @@ def get_log_sources():
 @app.route('/api/logs/download', methods=['GET'])
 def download_log():
     """Download a log file"""
-    from flask import send_file
     try:
         # Get log source from query parameter
         log_source = request.args.get('source', '')
@@ -343,6 +373,7 @@ def download_log():
 
 @app.route('/api/scripts/<script_id>/start', methods=['POST'])
 def start_script(script_id):
+    """Start a ROS2 script"""
     logger.info(f'Attempting to start script: {script_id}')
     
     if script_id not in ROS2_SCRIPTS:
@@ -355,26 +386,38 @@ def start_script(script_id):
     
     try:
         command = ROS2_SCRIPTS[script_id]['command']
+        script_name = ROS2_SCRIPTS[script_id]['description']
+
+        # Start the process
         process = subprocess.Popen(
             command,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            preexec_fn=os.setsid
+            preexec_fn=os.setsid  # Create new process group
         )
+
+        # Update tracking
         running_processes[script_id] = process
         ROS2_SCRIPTS[script_id]['status'] = 'running'
         ROS2_SCRIPTS[script_id]['pid'] = process.pid
         
-        script_name = ROS2_SCRIPTS[script_id]['description']
         logger.info(f'Successfully started {script_id} with PID: {process.pid}')
-        return jsonify({'message': f'✓ Started {script_name} (PID: {process.pid})', 'pid': process.pid})
+        return jsonify({
+            'message': f'✓ Started {script_name} (PID: {process.pid})',
+            'pid': process.pid
+        })
     except Exception as e:
         logger.error(f'Failed to start {script_id}: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/api/scripts/<script_id>/stop', methods=['POST'])
 def stop_script(script_id):
+    """Stop a running ROS2 script"""
+    if script_id not in ROS2_SCRIPTS:
+        return jsonify({'error': 'Invalid script ID'}), 400
+
     logger.info(f'Attempting to stop script: {script_id}')
     
     script_name = ROS2_SCRIPTS[script_id]['description']
@@ -397,37 +440,44 @@ def stop_script(script_id):
             del running_processes[script_id]
             return jsonify({'message': f'✓ Stopped {script_name} (PID: {pid})'})
         
-        # Kill the process inside the Docker container
-        # Find and kill the actual ROS2 process by name
-        process_name = 'turtlesim_node' if script_id == 'turtlesim' else 'rviz2'
-        kill_command = f'docker exec {DOCKER_CONTAINER} bash -c "pkill -f {process_name}"'
-        subprocess.run(kill_command, shell=True, timeout=5)
-        
-        # Try to kill the local docker exec process group
+        # Terminate the process gracefully
         try:
-            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+            process.terminate()
             process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            # Force kill if termination times out
+            process.kill()
+            process.wait()
         except ProcessLookupError:
             # Process doesn't exist anymore
             pass
-        except Exception as e:
-            # If termination fails, try SIGKILL
-            try:
-                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
-            except:
-                pass
-        
+
         del running_processes[script_id]
         
+        logger.info(f'Successfully stopped {script_id} (PID: {pid})')
         return jsonify({'message': f'✓ Stopped {script_name} (PID: {pid})'})
     except Exception as e:
+        logger.error(f'Error stopping {script_id}: {str(e)}')
         # Clean up even on error
         if script_id in running_processes:
             del running_processes[script_id]
         return jsonify({'message': f'✓ Stopped {script_name}'})
 
 
+# ============================================================================
+# Application Entry Point
+# ============================================================================
+
 if __name__ == '__main__':
-    logger.info('Starting MuSoHu ROS2 Script Manager')
+    server_config = config.get('server', {})
+    host = server_config.get('host', '0.0.0.0')
+    port = server_config.get('port', 5001)
+    debug = server_config.get('debug', False)
+
+    logger.info('=' * 70)
+    logger.info('Starting MuSoHu Web Application')
     logger.info(f'Available scripts: {", ".join(ROS2_SCRIPTS.keys())}')
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    logger.info(f'Server: http://{host}:{port}')
+    logger.info('=' * 70)
+
+    app.run(host=host, port=port, debug=debug)
