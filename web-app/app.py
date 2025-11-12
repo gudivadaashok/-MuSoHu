@@ -14,10 +14,25 @@ import logging
 from datetime import datetime
 import yaml
 
+# Get the base directory of this file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Setup logger first
+logger = logging.getLogger("uvicorn")
+
+# Prepare paths
+static_dir = os.path.join(BASE_DIR, "static")
+templates_dir = os.path.join(BASE_DIR, "templates")
+
+if not os.path.exists(static_dir):
+    logger.error(f"Static directory not found: {static_dir}")
+if not os.path.exists(templates_dir):
+    logger.error(f"Templates directory not found: {templates_dir}")
+
 # Initialize FastAPI app
 app = FastAPI()
 
-# Enable CORS
+# Add middleware FIRST
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,19 +41,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
 # Setup templates
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=templates_dir)
+logger.info(f"Templates directory: {templates_dir}")
 
-# Setup logger
-logger = logging.getLogger("uvicorn")
+# Mount static files LAST - this is critical for proper route registration
+try:
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+    logger.info(f"Successfully mounted static files from: {static_dir}")
+except Exception as e:
+    logger.error(f"Failed to mount static files: {e}")
 
 # Load configuration
 def load_config():
     """Load configuration from config.yml"""
-    config_path = 'config.yml'
+    config_path = os.path.join(BASE_DIR, 'config.yml')
     if os.path.exists(config_path):
         try:
             with open(config_path, 'r') as f:
