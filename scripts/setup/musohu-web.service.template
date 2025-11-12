@@ -30,10 +30,12 @@ StartLimitBurst=0
 NoNewPrivileges=true
 PrivateTmp=true
 
-# Resource limits (adjust based on your needs)
-MemoryMax=1G
-MemoryHigh=800M
-CPUQuota=50%
+# Resource limits (lightweight for single user - 256MB RAM, 25% CPU)
+# Typical usage: 50-100MB RAM, <10% CPU for single user
+# Adjust if needed for multiple concurrent users
+MemoryMax=256M
+MemoryHigh=200M
+CPUQuota=25%
 
 # Logging - All logs go to systemd journal
 StandardOutput=journal

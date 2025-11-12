@@ -4,7 +4,7 @@ Complete production-ready setup for the MuSoHu web application with automatic re
 
 ---
 
-##  Development vs Production
+## Development vs Production
 
 ### Development Mode (Port 8000, No sudo required)
 
@@ -25,16 +25,58 @@ uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 **Development Features:**
--  Auto-reload on code changes
--  No sudo required (runs on port 8000)
--  Detailed error messages
--  Interactive API docs at `/docs`
+- Auto-reload on code changes
+- No sudo required (runs on port 8000)
+- Detailed error messages
+- Interactive API docs at `/docs`
 
 **Use when:** Testing, developing features, debugging
 
-### Production Mode (Port 80, Systemd service)
+---
 
-**For production deployment:**
+### Production Mode - Option 1: User Port (No sudo) **RECOMMENDED**
+
+**For production without sudo (runs on port 8000):**
+
+```bash
+# 1. Navigate to web-app directory
+cd /path/to/MuSoHu/web-app
+
+# 2. Activate virtual environment
+source ../.venv/bin/activate
+
+# 3. Run production server (without reload)
+uvicorn app:app --host 0.0.0.0 --port 8000
+
+# 4. Access at http://localhost:8000
+```
+
+**To run in background:**
+```bash
+# Option A: Using nohup
+nohup ../.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 > logs/uvicorn.log 2>&1 &
+
+# Option B: Using screen
+screen -dmS musohu-web ../.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000
+
+# Option C: Using tmux
+tmux new-session -d -s musohu-web '../.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000'
+```
+
+**Production Features:**
+- No sudo required
+- Runs on port 8000 (non-privileged)
+- No reload (stable for production)
+- Can use systemd user service
+- Better security (no root privileges)
+
+**Use when:** Production deployment, security is priority, don't need port 80
+
+---
+
+### Production Mode - Option 2: System Service (Requires sudo)
+
+**For production with systemd on port 80:**
 
 ```bash
 # One-command setup
@@ -42,17 +84,255 @@ sudo bash scripts/setup/setup_production_web_service.sh
 ```
 
 **Production Features:**
--  Runs on port 80 (standard HTTP)
--  Automatic restart on failure
--  Systemd integration
--  Resource limits
--  Auto-start on boot
+- Runs on port 80 (standard HTTP)
+- Automatic restart on failure
+- Systemd integration
+- Resource limits
+- Auto-start on boot
+- Requires sudo for setup
 
-**Use when:** Deploying to production, need reliability and auto-restart
+**Use when:** Need port 80, want systemd auto-restart, deploying to production server
+
+**Note:** Port 80 requires root privileges. Better alternatives:
+- Use port 8000 (no sudo)
+- Use reverse proxy (nginx/Apache) forwarding from port 80
+- Use `setcap` to allow port binding without sudo (Linux only)
 
 ---
 
-##  Quick Start
+---
+
+## Avoiding Sudo in Production (Best Practices)
+
+### Why Avoid Sudo?
+
+Running applications with sudo/root privileges is a security risk. Here are better alternatives:
+
+### Recommended Approaches
+
+#### 1. Use Non-Privileged Port (Port 8000)
+
+**Best and simplest solution:**
+
+```bash
+# Run on port 8000 (no sudo needed)
+cd /path/to/MuSoHu/web-app
+../.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+Access at: `http://your-server:8000`
+
+**Pros:**
+- No sudo required
+- More secure
+- Simple to set up
+- Works everywhere
+
+**Cons:**
+- Need to specify port in URL
+- Non-standard port
+
+---
+
+#### 2. Use Reverse Proxy (nginx/Apache)
+
+**Professional production setup:**
+
+```bash
+# 1. Run app on port 8000 (no sudo)
+../.venv/bin/uvicorn app:app --host 127.0.0.1 --port 8000
+
+# 2. Install nginx
+sudo apt install nginx
+
+# 3. Configure nginx to forward port 80 → 8000
+sudo nano /etc/nginx/sites-available/musohu
+```
+
+Add this configuration:
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;  # or your IP address
+    
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+```bash
+# Enable the site
+sudo ln -s /etc/nginx/sites-available/musohu /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+**Pros:**
+- App runs without sudo
+- Standard port 80 accessible
+- Can add HTTPS easily
+- Better performance with static files
+- Production-grade setup
+
+**Cons:**
+- Requires nginx installation
+- More complex setup
+
+---
+
+#### 3. Use systemd User Service (No sudo for runtime)
+
+**Systemd without root privileges:**
+
+```bash
+# 1. Create user service directory
+mkdir -p ~/.config/systemd/user/
+
+# 2. Create service file
+nano ~/.config/systemd/user/musohu-web.service
+```
+
+Service file content:
+```ini
+[Unit]
+Description=MuSoHu Web Application
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/path/to/MuSoHu/web-app
+ExecStart=/path/to/MuSoHu/.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target
+```
+
+```bash
+# 3. Enable and start (no sudo!)
+systemctl --user daemon-reload
+systemctl --user enable musohu-web
+systemctl --user start musohu-web
+
+# 4. Enable linger (start on boot)
+sudo loginctl enable-linger $USER
+
+# Manage service (no sudo!)
+systemctl --user status musohu-web
+systemctl --user restart musohu-web
+systemctl --user stop musohu-web
+```
+
+**Pros:**
+- No sudo for daily operations
+- Systemd auto-restart
+- User-level service
+- Auto-start on boot
+
+**Cons:**
+- Still runs on port 8000
+- Requires initial linger setup with sudo
+
+---
+
+#### 4. Use Port Forwarding/iptables (Linux only)
+
+**Forward port 80 to 8000:**
+
+```bash
+# One-time setup (requires sudo)
+sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8000
+
+# Make persistent (Ubuntu/Debian)
+sudo apt install iptables-persistent
+sudo netfilter-persistent save
+
+# Then run app normally (no sudo)
+../.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+**Pros:**
+- Port 80 accessible
+- App runs without sudo
+
+**Cons:**
+- Linux-only
+- Requires one-time sudo setup
+- iptables knowledge needed
+
+---
+
+#### 5. Use setcap (Linux only)
+
+**Allow Python to bind to privileged ports:**
+
+```bash
+# Give Python capability to bind to port 80 (one-time)
+sudo setcap CAP_NET_BIND_SERVICE=+eip /path/to/MuSoHu/.venv/bin/python3
+
+# Then run on port 80 without sudo
+../.venv/bin/uvicorn app:app --host 0.0.0.0 --port 80
+```
+
+**Pros:**
+- Can use port 80
+- No sudo for running app
+
+**Cons:**
+- Security risk (any script can use port 80)
+- Linux-only
+- Lost on Python upgrade
+
+---
+
+### Comparison
+
+| Method | Sudo Needed | Port 80 | Security | Complexity | Recommended |
+|--------|-------------|---------|----------|------------|-------------|
+| **Port 8000** | No | No | 5-star | Easy | **Development** |
+| **Reverse Proxy** | Only for nginx | Yes | 5-star | Medium | **Production** |
+| **User Service** | Only once | No | 4-star | Easy | **Production** |
+| **Port Forward** | Only once | Yes | 3-star | Medium | Linux only |
+| **setcap** | Only once | Yes | 2-star | Easy | Not recommended |
+| **Direct sudo** | Always | Yes | 1-star | Easy | **Avoid** |
+
+---
+
+### Recommendations
+
+**For Development:**
+```bash
+# Just use port 8000
+uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+```
+
+**For Production (Best):**
+```bash
+# Option 1: nginx reverse proxy
+# App on port 8000 + nginx forwards from port 80
+# Most professional, secure, and flexible
+
+# Option 2: User systemd service  
+# Runs on port 8000, systemd manages it, no sudo needed
+# Good balance of convenience and security
+```
+
+**For Quick Production:**
+```bash
+# Just use port 8000
+# Simple, secure, works everywhere
+../.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+---
+
+## Quick Start
 
 ```bash
 # 1. Navigate to project directory
@@ -73,44 +353,44 @@ curl http://localhost/api/health
 
 ---
 
-##  Features
+## Features
 
 | Feature | Description | Benefit |
 |---------|-------------|---------|
-| ** Automatic Restart** | `Restart=always` | Service recovers from crashes automatically |
-| ** Unlimited Restarts** | `StartLimitBurst=0` | No artificial limits on restart attempts |
-| ** Restart Delay** | `RestartSec=10` | 10-second delay prevents rapid restart loops |
-| ** Production Server** | Uvicorn ASGI | Modern async server for FastAPI |
-| ** FastAPI Framework** | High-performance async | 2-3x faster than traditional frameworks |
-| ** Resource Limits** | 1GB RAM, 50% CPU | Prevents runaway processes |
-| ** Systemd Logging** | Journal integration | Centralized log management |
+| **Automatic Restart** | `Restart=always` | Service recovers from crashes automatically |
+| **Unlimited Restarts** | `StartLimitBurst=0` | No artificial limits on restart attempts |
+| **Restart Delay** | `RestartSec=10` | 10-second delay prevents rapid restart loops |
+| **Production Server** | Uvicorn ASGI | Modern async server for FastAPI |
+| **FastAPI Framework** | High-performance async | 2-3x faster than traditional frameworks |
+| **Resource Limits** | 256MB RAM, 25% CPU | Prevents runaway processes while being lightweight |
+| **Systemd Logging** | Journal integration | Centralized log management |
 | **Auto-start** | Boot integration | Starts automatically on system boot |
-| ** Health Checks** | `/api/health` endpoint | Monitor service health easily |
-| ** Security** | Process isolation | NoNewPrivileges, PrivateTmp |
-| ** Standard Port** | Port 80 | No port number needed in URLs |
+| **Health Checks** | `/api/health` endpoint | Monitor service health easily |
+| **Security** | Process isolation | NoNewPrivileges, PrivateTmp |
+| **Standard Port** | Port 80 | No port number needed in URLs |
 
 ---
 
-##  What Gets Installed
+## What Gets Installed
 
 ### Files Created:
--  `/etc/systemd/system/musohu-web.service` - Systemd service file
--  `web-app/venv/` - Python virtual environment  
--  All dependencies including Uvicorn ASGI server
+- `/etc/systemd/system/musohu-web.service` - Systemd service file
+- `web-app/venv/` - Python virtual environment  
+- All dependencies including Uvicorn ASGI server
 
 ### Files Modified:
--  `web-app/requirements.txt` - Updated with FastAPI dependencies
--  `web-app/app.py` - FastAPI application with async support
+- `web-app/requirements.txt` - Updated with FastAPI dependencies
+- `web-app/app.py` - FastAPI application with async support
 
 ### Scripts Available:
--  `scripts/setup/setup_production_web_service.sh` - Installation script
--  `scripts/utils/manage_web_service.sh` - Easy management tool
--  `scripts/setup/test_production_setup.sh` - Verification tests
--  `scripts/setup/QUICK_REFERENCE.sh` - Command reference
+- `scripts/setup/setup_production_web_service.sh` - Installation script
+- `scripts/utils/manage_web_service.sh` - Easy management tool
+- `scripts/setup/test_production_setup.sh` - Verification tests
+- `scripts/setup/QUICK_REFERENCE.sh` - Command reference
 
 ---
 
-##  Documentation
+## Documentation
 
 - **[PRODUCTION_SETUP.md](PRODUCTION_SETUP.md)** - Complete setup guide with all details
 - **[CHANGES_SUMMARY.md](CHANGES_SUMMARY.md)** - What was changed and why
@@ -119,7 +399,7 @@ curl http://localhost/api/health
 
 ---
 
-##  Service Management
+## Service Management
 
 ### Easy Way (Recommended)
 
@@ -163,7 +443,7 @@ sudo systemctl disable musohu-web   # Disable auto-start
 
 ---
 
-##  Monitoring
+## Monitoring
 
 ### View Logs
 
@@ -211,7 +491,7 @@ curl http://localhost/api/health
 
 ---
 
-##  Testing
+## Testing
 
 ### Run Verification Tests
 
@@ -221,12 +501,12 @@ bash scripts/setup/test_production_setup.sh
 ```
 
 This tests:
--  File system structure
--  Python environment
--  Systemd service configuration
--  Runtime status
--  Network connectivity
--  Health endpoint
+- File system structure
+- Python environment
+- Systemd service configuration
+- Runtime status
+- Network connectivity
+- Health endpoint
 
 ### Manual Testing
 
@@ -249,7 +529,7 @@ sudo journalctl -u musohu-web -n 50
 
 ---
 
-##  Configuration
+## Configuration
 
 ### Application Settings
 
@@ -275,10 +555,10 @@ Restart=always              # Always restart on failure
 RestartSec=10              # Wait 10 seconds before restart
 StartLimitBurst=0          # No limit on restart attempts
 
-# Resource limits
-MemoryMax=1G               # Maximum memory
-MemoryHigh=800M            # Soft limit
-CPUQuota=50%               # CPU usage limit
+# Resource limits (lightweight for single user)
+MemoryMax=256M             # Maximum memory (sufficient for single user)
+MemoryHigh=200M            # Soft limit
+CPUQuota=25%               # CPU usage limit (1/4 of one core)
 
 # Adjust as needed for your system
 ```
@@ -291,7 +571,7 @@ sudo systemctl restart musohu-web
 
 ---
 
-##  Troubleshooting
+## Troubleshooting
 
 ### Service Won't Start
 
@@ -356,7 +636,7 @@ sudo systemctl restart musohu-web
 
 ---
 
-##  Updating the Service
+## Updating the Service
 
 ### Update Application Code
 
@@ -389,7 +669,7 @@ sudo bash scripts/setup/setup_production_web_service.sh
 
 ---
 
-##  Uninstall
+## Uninstall
 
 ```bash
 # 1. Stop and disable service
@@ -409,43 +689,85 @@ rm -rf web-app/venv
 
 ---
 
-##  Performance Tips
+## Performance Tips
+
+### When to Adjust Settings
+
+**For single user or local use (default is fine):**
+- The default limits (256MB RAM, 25% CPU) are sufficient for single user
+- Typical usage: 50-100MB RAM, <10% CPU
+- No changes needed for typical usage
+
+**For systems with limited RAM (4-8GB total):**
+- Keep defaults (256MB RAM limit)
+- This reserves less than 4% of your system RAM
+
+**For multiple concurrent users (5-10+ users) or high RAM systems (16GB+):**
+- Consider increasing to 512MB-1GB
+- Monitor actual usage first before adjusting
 
 ### Uvicorn Workers
 
-For better performance, you can run multiple worker processes:
-
-Edit `/etc/systemd/system/musohu-web.service`:
+**Single user setup (default - recommended):**
 ```ini
-ExecStart=/path/to/venv/bin/uvicorn app:app --host 0.0.0.0 --port 80 --workers 4
+# No workers needed, runs single process
+ExecStart=/path/to/venv/bin/uvicorn app:app --host 0.0.0.0 --port 80
 ```
+
+**Multiple concurrent users (10+ users):**
+```ini
+# Run with multiple worker processes for better concurrency
+ExecStart=/path/to/venv/bin/uvicorn app:app --host 0.0.0.0 --port 80 --workers 2
+```
+
+**Note:** Each worker uses additional memory. Start with 1 worker (default) and only add more if needed.
 
 ### Async Performance
 
-FastAPI supports async/await for better concurrent performance. The application already uses async where appropriate for handling multiple requests efficiently.
+FastAPI supports async/await for better concurrent performance. The application already uses async where appropriate for handling multiple requests efficiently, even with a single worker process.
 
-### Increase Resource Limits
+### Increase Resource Limits (Only if needed)
 
-Edit `/etc/systemd/system/musohu-web.service`:
-```ini
-MemoryMax=2G      # Increase to 2GB
-CPUQuota=100%     # Use full CPU
+**Check current usage first:**
+```bash
+# Monitor memory usage
+sudo systemctl show musohu-web -p MemoryCurrent
+
+# Monitor CPU usage
+top -p $(pgrep -f "uvicorn app:app")
 ```
 
+**Typical usage for single user:**
+- Memory: 50-100MB (well under 256MB limit)
+- CPU: 5-15% (well under 25% limit)
+
+**Only increase if you see:**
+- Memory consistently over 200MB
+- CPU consistently at 25%+
+- Application becoming slow under load
+
+**Then edit** `/etc/systemd/system/musohu-web.service`:
+```ini
+MemoryMax=512M    # Only if memory usage is consistently high
+CPUQuota=50%      # Only if CPU usage is consistently high
+```
+
+**For single user on 8GB system:** Default limits (256MB/25% CPU) are perfect. Don't change unless you have performance issues.
+
 ---
 
-##  Security Considerations
+## Security Considerations
 
 The service includes security hardening:
--  Runs as non-root user
--  `NoNewPrivileges=true` - Prevents privilege escalation
--  `PrivateTmp=true` - Isolated temporary directory
--  Resource limits prevent DoS attacks
--  Firewall-ready (UFW configuration included)
+- Runs as non-root user
+- `NoNewPrivileges=true` - Prevents privilege escalation
+- `PrivateTmp=true` - Isolated temporary directory
+- Resource limits prevent DoS attacks
+- Firewall-ready (UFW configuration included)
 
 ---
 
-##  Integration Examples
+## Integration Examples
 
 ### With Nginx Reverse Proxy
 
@@ -486,7 +808,7 @@ scrape_configs:
 
 ---
 
-##  Additional Resources
+## Additional Resources
 
 - **systemd Documentation**: https://www.freedesktop.org/software/systemd/man/
 - **FastAPI Documentation**: https://fastapi.tiangolo.com/
@@ -495,7 +817,7 @@ scrape_configs:
 
 ---
 
-##  Getting Help
+## Getting Help
 
 1. **Run tests**: `bash scripts/setup/test_production_setup.sh`
 2. **Check logs**: `sudo journalctl -u musohu-web -n 100`
@@ -505,7 +827,7 @@ scrape_configs:
 
 ---
 
-##  Quick Checklist
+## Quick Checklist
 
 After installation, verify:
 
@@ -523,4 +845,4 @@ After installation, verify:
 **Version**: 1.0  
 **Status**: Production Ready 
 
-**Enjoy your production-ready MuSoHu web service! **
+**Enjoy your production-ready MuSoHu web service!**
