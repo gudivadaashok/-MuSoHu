@@ -3,16 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log Viewer - MuSoHu</title>
+    <title>MuSoHu - Log Viewer</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="log-viewer-container">
+    <!-- Navigation Header -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle navigation menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+                <img src="https://cs.gmu.edu/~xiao/xuesu_website_files/RobotiXX_gmu.gif" alt="RobotiXX Logo" class="nav-logo">
+            </div>
+            <div class="nav-center">
+                <h1 class="nav-title">MuSoHu</h1>
+                <p class="nav-subtitle">Multi-Modal Social Human Navigation</p>
+            </div>
+            <div class="nav-links" id="nav-links">
+                <a href="/" class="nav-link">Scripts</a>
+                <a href="/logs" class="nav-link active">Logs</a>
+                <a href="/disk-space" class="nav-link">Disk Space</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="log-viewer-container">
         <!-- Sidebar -->
-        <aside class="log-sidebar">
+        <aside class="log-sidebar" id="log-sidebar">
             <div class="sidebar-header">
-                <img src="https://cs.gmu.edu/~xiao/xuesu_website_files/RobotiXX_gmu.gif" alt="RobotiXX Logo" class="sidebar-logo">
                 <h2>Log Files</h2>
+                <p id="sidebar-hint" class="sidebar-hint">Select a file to view</p>
             </div>
             
             <div class="sidebar-controls">
@@ -24,11 +48,6 @@
             
             <div id="file-tree" class="file-tree">
                 <p class="loading">Loading files...</p>
-            </div>
-            
-            <div class="sidebar-footer">
-                <a href="/" class="sidebar-link"><span class="icon-arrow">←</span> Scripts</a>
-                <a href="/disk-space" class="sidebar-link"><span class="icon-disk">⊙</span> Disk Space</a>
             </div>
         </aside>
         
@@ -71,13 +90,40 @@
                     <p><span class="icon-pointer">☜</span> Select a log file from the sidebar to view its contents</p>
                 </div>
             </div>
-            
-            <footer class="log-footer">
-                <p>Contact us at <a href="https://robotixx.cs.gmu.edu/index.html" target="_blank" rel="noopener noreferrer">RobotiXX Lab</a></p>
-            </footer>
         </main>
     </div>
 
+        <footer class="footer">
+            <p>Contact us at <a href="https://robotixx.cs.gmu.edu/index.html" target="_blank" rel="noopener noreferrer">RobotiXX Lab</a></p>
+        </footer>
+    </div>
+
+    <script>
+        // Mobile Navigation Toggle
+        const navHamburger = document.getElementById('nav-hamburger');
+        const navLinks = document.getElementById('nav-links');
+
+        navHamburger.addEventListener('click', () => {
+            navHamburger.classList.toggle('active');
+            navLinks.classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!navHamburger.contains(e.target) && !navLinks.contains(e.target)) {
+                navHamburger.classList.remove('active');
+                navLinks.classList.remove('active');
+            }
+        });
+
+        // Close menu when clicking a link
+        navLinks.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                navHamburger.classList.remove('active');
+                navLinks.classList.remove('active');
+            });
+        });
+    </script>
     <script>
         let currentFileId = null;
         let allFiles = {};
@@ -169,6 +215,12 @@
         function selectFile(fileId) {
             currentFileId = fileId;
             searchActive = false;
+            
+            // Hide the sidebar hint
+            const sidebarHint = document.getElementById('sidebar-hint');
+            if (sidebarHint) {
+                sidebarHint.classList.add('hidden');
+            }
             
             // Update UI
             document.querySelectorAll('.file-item').forEach(item => {

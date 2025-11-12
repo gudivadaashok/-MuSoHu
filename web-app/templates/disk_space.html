@@ -3,22 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Disk Space Monitor</title>
+    <title>MuSoHu - Disk Space Monitor</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <img src="https://cs.gmu.edu/~xiao/xuesu_website_files/RobotiXX_gmu.gif" alt="RobotiXX Logo" class="logo">
+    <!-- Navigation Header -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle navigation menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+                <img src="https://cs.gmu.edu/~xiao/xuesu_website_files/RobotiXX_gmu.gif" alt="RobotiXX Logo" class="nav-logo">
+            </div>
+            <div class="nav-center">
+                <h1 class="nav-title">MuSoHu</h1>
+                <p class="nav-subtitle">Multi-Modal Social Human Navigation</p>
+            </div>
+            <div class="nav-links" id="nav-links">
+                <a href="/" class="nav-link">Scripts</a>
+                <a href="/logs" class="nav-link">Logs</a>
+                <a href="/disk-space" class="nav-link active">Disk Space</a>
+            </div>
         </div>
-        <div class="title-section">
-            <h1>Disk Space Monitor</h1>
-            <p class="subtitle">System Storage Information</p>
-        </div>
+    </nav>
 
-        <div class="nav-links">
-            <a href="/" class="nav-link">Back to Scripts</a>
-            <a href="/logs" class="nav-link">View Logs</a>
+    <div class="container">
+        <div class="page-header">
+            <h2>Disk Space Monitor</h2>
+            <p class="page-description">System Storage Information</p>
         </div>
 
         <div class="disk-space-full">
@@ -30,6 +45,32 @@
         </footer>
     </div>
 
+    <script>
+        // Mobile Navigation Toggle
+        const navHamburger = document.getElementById('nav-hamburger');
+        const navLinks = document.getElementById('nav-links');
+
+        navHamburger.addEventListener('click', () => {
+            navHamburger.classList.toggle('active');
+            navLinks.classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!navHamburger.contains(e.target) && !navLinks.contains(e.target)) {
+                navHamburger.classList.remove('active');
+                navLinks.classList.remove('active');
+            }
+        });
+
+        // Close menu when clicking a link
+        navLinks.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                navHamburger.classList.remove('active');
+                navLinks.classList.remove('active');
+            });
+        });
+    </script>
     <script>
         async function loadDiskSpace() {
             try {

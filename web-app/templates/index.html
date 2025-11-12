@@ -3,24 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROS2 Script Manager</title>
+    <title>MuSoHu - Script Manager</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+    <!-- Navigation Header -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle navigation menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+                <img src="https://cs.gmu.edu/~xiao/xuesu_website_files/RobotiXX_gmu.gif" alt="RobotiXX Logo" class="nav-logo">
+            </div>
+            <div class="nav-center">
+                <h1 class="nav-title">MuSoHu</h1>
+                <p class="nav-subtitle">Multi-Modal Social Human Navigation</p>
+            </div>
+            <div class="nav-links" id="nav-links">
+                <a href="/" class="nav-link active">Scripts</a>
+                <a href="/logs" class="nav-link">Logs</a>
+                <a href="/disk-space" class="nav-link">Disk Space</a>
+            </div>
+        </div>
+    </nav>
+
     <div class="container">
-        <div class="header">
-            <img src="https://cs.gmu.edu/~xiao/xuesu_website_files/RobotiXX_gmu.gif" alt="RobotiXX Logo" class="logo">
-        </div>
-        <div class="title-section">
-            <h1>MuSoHu</h1>
-            <p class="subtitle">Multi-Modal Social Human Navigation Dataset</p>
-        </div>
-
-        <div class="nav-links">
-            <a href="/disk-space" class="nav-link">View Disk Space</a>
-            <a href="/logs" class="nav-link">View Logs</a>
-        </div>
-
         <!-- Toast Container -->
         <div id="toast-container"></div>
 
@@ -31,6 +41,32 @@
         </footer>
     </div>
 
+    <script>
+        // Mobile Navigation Toggle
+        const navHamburger = document.getElementById('nav-hamburger');
+        const navLinks = document.getElementById('nav-links');
+
+        navHamburger.addEventListener('click', () => {
+            navHamburger.classList.toggle('active');
+            navLinks.classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!navHamburger.contains(e.target) && !navLinks.contains(e.target)) {
+                navHamburger.classList.remove('active');
+                navLinks.classList.remove('active');
+            }
+        });
+
+        // Close menu when clicking a link
+        navLinks.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                navHamburger.classList.remove('active');
+                navLinks.classList.remove('active');
+            });
+        });
+    </script>
     <script>
         // Toast Notification System
         function showToast(message, type = 'info') {
