@@ -2,6 +2,56 @@
 
 Complete production-ready setup for the MuSoHu web application with automatic restart, resource limits, and professional deployment features.
 
+---
+
+##  Development vs Production
+
+### Development Mode (Port 8000, No sudo required)
+
+**For testing and development:**
+
+```bash
+# 1. Navigate to web-app directory
+cd /path/to/MuSoHu/web-app
+
+# 2. Activate virtual environment and install dependencies
+source ../.venv/bin/activate
+pip install -r requirements.txt
+
+# 3. Run development server with auto-reload
+uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+
+# 4. Access at http://localhost:8000
+```
+
+**Development Features:**
+-  Auto-reload on code changes
+-  No sudo required (runs on port 8000)
+-  Detailed error messages
+-  Interactive API docs at `/docs`
+
+**Use when:** Testing, developing features, debugging
+
+### Production Mode (Port 80, Systemd service)
+
+**For production deployment:**
+
+```bash
+# One-command setup
+sudo bash scripts/setup/setup_production_web_service.sh
+```
+
+**Production Features:**
+-  Runs on port 80 (standard HTTP)
+-  Automatic restart on failure
+-  Systemd integration
+-  Resource limits
+-  Auto-start on boot
+
+**Use when:** Deploying to production, need reliability and auto-restart
+
+---
+
 ##  Quick Start
 
 ```bash

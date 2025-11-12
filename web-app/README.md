@@ -114,28 +114,75 @@ Available log levels (from least to most verbose):
 - `INFO` - General information (default)
 - `DEBUG` - Detailed debugging information
 
-### Installation
+### Installation & Running
 
-1. Install dependencies:
+#### Development Mode (Recommended for Testing)
+
+1. **Navigate to the web-app directory**:
    ```bash
+   cd /path/to/MuSoHu/web-app
+   ```
+
+2. **Set up Python virtual environment** (if not already done):
+   ```bash
+   # The project uses a virtual environment in the parent directory
+   # It should already exist at ../venv/
+   # If not, create it:
+   cd ..
+   python3 -m venv .venv
+   cd web-app
+   ```
+
+3. **Install dependencies**:
+   ```bash
+   # Activate the virtual environment
+   source ../.venv/bin/activate
+   
+   # Install required packages
    pip install -r requirements.txt
    ```
 
-2. Make sure the config.yml file exists in the web-app directory
-
-3. Run the application:
+4. **Run the development server**:
    ```bash
-   # For development (with auto-reload)
-   uvicorn app:app --host 0.0.0.0 --port 80 --reload
+   # Option 1: Using the virtual environment (recommended)
+   ../.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --reload
    
-   # Or use the startup script
-   sudo bash start_web_service.sh
-   
-   # For production deployment, see production setup guide
-   sudo bash ../scripts/setup/setup_production_web_service.sh
+   # Option 2: If venv is activated
+   uvicorn app:app --host 0.0.0.0 --port 8000 --reload
    ```
 
-**Note**: Running on port 80 requires sudo/root privileges.
+5. **Access the application**:
+   - Open your browser to: `http://localhost:8000`
+   - API documentation: `http://localhost:8000/docs`
+   - Alternative docs: `http://localhost:8000/redoc`
+
+**Development Mode Features**:
+- `--reload`: Auto-reloads on code changes
+- Port 8000: No sudo required
+- Detailed error messages and stack traces
+- Interactive API documentation at `/docs`
+
+**Stopping the server**: Press `Ctrl+C` in the terminal
+
+#### Production Mode
+
+For production deployment with automatic restart and systemd integration:
+
+```bash
+# For production deployment, see production setup guide
+sudo bash ../scripts/setup/setup_production_web_service.sh
+```
+
+**Production Mode Features**:
+- Runs on port 80 (standard HTTP)
+- Automatic restart on failure
+- Systemd integration with logging
+- Resource limits and security hardening
+- Auto-start on system boot
+
+See [PRODUCTION_WEB_SERVICE.md](../docs/guides/PRODUCTION_WEB_SERVICE.md) for complete production setup documentation.
+
+### Installation
 
 ### API Endpoints
 
