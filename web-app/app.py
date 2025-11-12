@@ -3,7 +3,7 @@ MuSoHu Web Application
 Manages ROS2 scripts, displays logs, and monitors system resources
 """
 from fastapi import FastAPI, Request, Query
-from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +13,7 @@ import shutil
 import logging
 from datetime import datetime
 import yaml
+from file_discovery import FileDiscoveryService
 
 # Get the base directory of this file
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -89,6 +90,9 @@ def get_default_config():
 
 # Load configuration
 config = load_config()
+
+# Initialize file discovery service
+file_discovery = FileDiscoveryService(config)
 
 # Define available ROS2 scripts
 ROS2_SCRIPTS = {
@@ -436,7 +440,173 @@ async def download_log(source: str = Query(default="", alias="source")):
         logger.error(f'Failed to download log: {str(e)}')
         return JSONResponse(content={'error': str(e)}, status_code=500)
 
-@app.post("/api/scripts/{script_id}/start")
+
+# ============================================================================
+# NEW API Routes - Enhanced Log Viewer
+# ============================================================================
+
+@app.get("/api/files")
+async def list_files():
+    """
+    List all available log files with metadata
+    Returns files grouped by directory
+    """
+    try:
+        files_by_dir = file_discovery.get_files_by_directory()
+        
+        # Convert to response format
+        response = {}
+        for dir_key, files in files_by_dir.items():
+            # Get directory description from first file
+            dir_description = files[0].dir_description if files else dir_key
+            
+            response[dir_key] = {
+                'description': dir_description,
+                'files': [
+                    {
+                        'id': f"{file.dir_key}/{file.name}",
+                        **file.to_dict()
+                    }
+                    for file in files
+                ]
+            }
+        
+        return JSONResponse(content=response)
+    except Exception as e:
+        logger.error(f'Failed to list files: {str(e)}')
+        return JSONResponse(content={'error': str(e)}, status_code=500)
+
+
+@app.get("/api/file")
+async def get_file(
+    file_id: str = Query(..., description="File ID in format: dir_key/filename"),
+    lines: int = Query(None, description="Number of lines to return"),
+    tail: bool = Query(True, description="Return last N lines (True) or first N lines (False)"),
+    search: str = Query(None, description="Search term to filter lines")
+):
+    """
+    Get file contents with optional search
+    
+    Query parameters:
+    - file_id: Unique file identifier (dir_key/filename)
+    - lines: Max number of lines to return (default from config)
+    - tail: If true, return last N lines; else first N lines
+    - search: Optional search term to filter results
+    """
+    try:
+        # If search is provided, use search functionality
+        if search:
+            search_config = config.get('log_viewer', {}).get('search', {})
+            case_sensitive = search_config.get('case_sensitive', False)
+            max_results = search_config.get('max_results', 1000)
+            
+            results = file_discovery.search_in_file(
+                file_id, 
+                search, 
+                case_sensitive=case_sensitive,
+                max_results=max_results
+            )
+            
+            return JSONResponse(content={
+                'file_id': file_id,
+                'search_term': search,
+                'results': results,
+                'total_matches': len(results)
+            })
+        
+        # Otherwise, return file contents
+        file_lines = file_discovery.read_file_lines(file_id, max_lines=lines, tail=tail)
+        
+        if file_lines is None:
+            return JSONResponse(
+                content={'error': 'File not found'},
+                status_code=404
+            )
+        
+        # Get file metadata
+        metadata = file_discovery.get_file_by_id(file_id)
+        
+        return JSONResponse(content={
+            'file_id': file_id,
+            'metadata': metadata.to_dict() if metadata else None,
+            'lines': [line.rstrip('\n') for line in file_lines],
+            'total_lines': len(file_lines)
+        })
+        
+    except Exception as e:
+        logger.error(f'Failed to get file {file_id}: {str(e)}')
+        return JSONResponse(content={'error': str(e)}, status_code=500)
+
+
+@app.get("/api/file/download")
+async def download_file(
+    file_id: str = Query(..., description="File ID in format: dir_key/filename")
+):
+    """Download a log file"""
+    try:
+        metadata = file_discovery.get_file_by_id(file_id)
+        
+        if not metadata:
+            return JSONResponse(
+                content={'error': 'File not found'},
+                status_code=404
+            )
+        
+        if not metadata.exists:
+            return JSONResponse(
+                content={'error': 'File does not exist on disk'},
+                status_code=404
+            )
+        
+        logger.info(f'Downloading file: {metadata.name} from {metadata.dir_key}')
+        return FileResponse(
+            metadata.path,
+            media_type='application/octet-stream',
+            filename=metadata.name
+        )
+    except Exception as e:
+        logger.error(f'Failed to download file {file_id}: {str(e)}')
+        return JSONResponse(content={'error': str(e)}, status_code=500)
+
+
+@app.get("/api/file/stream")
+async def stream_file(
+    file_id: str = Query(..., description="File ID in format: dir_key/filename")
+):
+    """
+    Stream file contents (useful for large files)
+    Returns file as a streaming response
+    """
+    try:
+        metadata = file_discovery.get_file_by_id(file_id)
+        
+        if not metadata or not metadata.exists:
+            return JSONResponse(
+                content={'error': 'File not found'},
+                status_code=404
+            )
+        
+        def generate():
+            try:
+                with open(metadata.path, 'r', encoding='utf-8', errors='ignore') as f:
+                    for line in f:
+                        yield line
+            except Exception as e:
+                logger.error(f"Error streaming file {metadata.path}: {e}")
+        
+        return StreamingResponse(
+            generate(),
+            media_type='text/plain',
+            headers={'Content-Disposition': f'inline; filename="{metadata.name}"'}
+        )
+    except Exception as e:
+        logger.error(f'Failed to stream file {file_id}: {str(e)}')
+        return JSONResponse(content={'error': str(e)}, status_code=500)
+
+
+# ============================================================================
+# API Routes - Scripts
+# ============================================================================
 async def start_script(script_id: str):
     """Start a ROS2 script"""
     logger.info(f'Attempting to start script: {script_id}')
@@ -530,4 +700,8 @@ async def stop_script(script_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=80, reload=True)
+    server_config = config.get('server', {})
+    host = server_config.get('host', '0.0.0.0')
+    port = server_config.get('port', 8000)
+    uvicorn.run("app:app", host=host, port=port, reload=True)
+

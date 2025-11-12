@@ -116,7 +116,7 @@ Available log levels (from least to most verbose):
 
 ### Installation & Running
 
-#### Development Mode (Recommended for Testing)
+#### Development Mode
 
 1. **Navigate to the web-app directory**:
    ```bash
@@ -156,13 +156,13 @@ Available log levels (from least to most verbose):
    - API documentation: `http://localhost:8000/docs`
    - Alternative docs: `http://localhost:8000/redoc`
 
-**Development Mode Features**:
+Development Mode Features:
 - `--reload`: Auto-reloads on code changes
 - Port 8000: No sudo required
 - Detailed error messages and stack traces
 - Interactive API documentation at `/docs`
 
-**Stopping the server**: Press `Ctrl+C` in the terminal
+Stopping the server: Press `Ctrl+C` in the terminal
 
 #### Production Mode
 
@@ -173,14 +173,14 @@ For production deployment with automatic restart and systemd integration:
 sudo bash ../scripts/deploy/setup_production_web_service.sh
 ```
 
-**Production Mode Features**:
+Production Mode Features:
 - Runs on port 80 (standard HTTP)
 - Automatic restart on failure
 - Systemd integration with logging
-- Resource limits and security hardening
+- Resource limits and security features
 - Auto-start on system boot
 
-See [PRODUCTION_WEB_SERVICE.md](../docs/guides/PRODUCTION_WEB_SERVICE.md) for complete production setup documentation.
+See [PRODUCTION_WEB_SERVICE.md](../docs/guides/PRODUCTION_WEB_SERVICE.md) for production setup documentation.
 
 ### Installation
 
@@ -205,10 +205,10 @@ The application provides both HTML pages and REST API endpoints:
 
 ### Notes
 
-- If `config.yml` is not found, the application will use default values
-- Log files and their parent directories will be created automatically if they don't exist
-- Changes to most configuration values require restarting the application
-- Invalid YAML syntax will cause the application to fall back to default settings
-- Port 80 provides standard HTTP access without needing to specify a port number
+- If `config.yml` is not found, the application uses default values
+- Log files and directories are created automatically if they don't exist
+- Configuration changes require restarting the application
+- Invalid YAML syntax causes fallback to default settings
+- Port 80 provides standard HTTP access
 - FastAPI provides automatic API documentation at `/docs` and `/redoc`
 

@@ -6,9 +6,7 @@ Multi-Modal Social Human Navigation Dataset - A robotics research platform devel
 
 ## About
 
-Humans are well-adept at navigating public spaces shared with others, where current autonomous mobile robots still struggle. While safely and efficiently reaching their goals, humans communicate their intentions and conform to unwritten social norms on a daily basis; conversely, robots become clumsy in those daily social scenarios, getting stuck in dense crowds, surprising nearby pedestrians, or even causing collisions.
-
-This project utilizes rich, widely available social human navigation data in natural human-inhabited public spaces for robots to learn similar, human-like, socially compliant navigation behaviors. We provide an open-source egocentric data collection sensor suite wearable by walking humans to capture multi-modal robot perception data.
+This project collects social human navigation data in natural human-inhabited public spaces. An egocentric data collection sensor suite worn by walking humans captures multi-modal robot perception data.
 
 ### Dataset Scale
 - **~100 km** of navigation data
@@ -19,7 +17,7 @@ This project utilizes rich, widely available social human navigation data in nat
 
 ## Multi-Modal Sensor Suite
 
-Our wearable data collection device provides multi-modal perceptual streams commonly available on mobile robot platforms:
+The wearable data collection device includes:
 
 - **3D LiDAR** - Robosense Helios 32 (360° environmental scanning)
 - **Stereo & Depth Camera** - Stereolabs ZED 2i (visual perception and depth sensing)
@@ -34,15 +32,15 @@ For complete documentation, setup instructions, and production deployment guides
 - **[Production Web Service Setup](docs/PRODUCTION_WEB_SERVICE.md)** - Complete guide for deploying the web application
 - **[Production Setup Details](docs/PRODUCTION_SETUP.md)** - Detailed systemd configuration and monitoring
 
-## Quick Overview
+## Overview
 
-MuSoHu is a platform that allows to collect data for the social navigation research project. It is built using ROS2 and provides a web interface for users to interact with the system.
+MuSoHu is a platform for collecting data for social navigation research. It is built using ROS2 and includes a web interface for system interaction.
 
-### Key Features
+### Features
 - ROS2-based robotics platform
 - Multi-sensor integration (ZED camera, LiDAR, IMU, Audio)
 - Web interface for system control and monitoring
-- Production-ready deployment with automatic crash recovery
+- Deployment with automatic restart capability
 - Helmet-mounted sensor suite for data collection
 
 ### Project Structure

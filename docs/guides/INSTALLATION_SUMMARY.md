@@ -1,6 +1,7 @@
-# MuSoHu Production Setup - Installation Complete!
+````markdown
+# MuSoHu Production Setup - Installation Summary
 
-## WHAT WAS CREATED
+## Created Files
 
 ### Modified Files
 - `web-app/app.py` - Added Waitress WSGI + /health endpoint
@@ -19,33 +20,33 @@
 - `docs/ARCHITECTURE.md` - Architecture diagrams
 - `docs/QUICK_REFERENCE.md` - Command reference
 
-## KEY FEATURES IMPLEMENTED
+## Key Features
 
 ### Automatic Restart on Failure
-→ `Restart=always` ensures service always comes back up
+`Restart=always` configuration restarts service on failure
 
 ### No Restart Limits
-→ `StartLimitBurst=0` means unlimited restart attempts
+`StartLimitBurst=0` allows unlimited restart attempts
 
 ### Delay Between Restarts
-→ `RestartSec=10` prevents rapid restart loops
+`RestartSec=10` delays between restarts
 
 ### Production WSGI Server
-→ Waitress handles 4 threads, 100 concurrent connections
+Waitress with 4 threads, 100 concurrent connections
 
 ### Systemd Integration
-→ Auto-start on boot, crash recovery, centralized logging
+Auto-start on boot, crash recovery, centralized logging
 
 ### Resource Limits
-→ CPU (50%) and Memory (1GB) limits prevent runaway processes
+CPU (50%) and Memory (1GB) limits
 
 ### Journal Logging
-→ All logs go to systemd journal for centralized management
+Logs sent to systemd journal
 
 ### Health Check Endpoint
-→ `/health` endpoint for monitoring and load balancers
+`/health` endpoint for monitoring
 
-## NEXT STEPS - INSTALL THE SERVICE
+## Installation Steps
 
 ### 1. Install the production service
 
@@ -115,7 +116,7 @@ bash scripts/utils/manage_web_service.sh test
 bash scripts/utils/manage_web_service.sh --help
 ```
 
-## WHAT HAPPENS ON CRASH?
+## Crash Recovery Process
 
 ```
 Application Crashes
@@ -126,23 +127,22 @@ Wait 10 Seconds (RestartSec=10)
        ↓
 Restart Service Automatically
        ↓
-Service Running Again!
+Service Running Again
        ↓
 (Repeats indefinitely if needed)
 ```
 
-**The service NEVER stays down!**
+The service automatically restarts on failure.
 
-## PRODUCTION FEATURES
+## Production Features
 
 ### Performance
-- Waitress WSGI server (production-grade)
+- Waitress WSGI server
 - Multi-threaded request handling (4 threads)
 - Connection pooling (100 concurrent connections)
-- 10x+ faster than Flask development server
 
 ### Reliability
-- Automatic restart on any failure
+- Automatic restart on failure
 - Unlimited restart attempts
 - 10-second delay between restarts
 - Auto-start on system boot
@@ -156,25 +156,23 @@ Service Running Again!
 ### Security
 - Runs as non-root user
 - Process isolation (NoNewPrivileges)
-- Resource limits (prevents DoS)
+- Resource limits
 - Private temporary directory
 
-## YOU'RE ALL SET!
+## Installation
 
-The production setup is now ready. Just run the installation script:
+Run the installation script:
 
 ```bash
 sudo bash scripts/deploy/setup_production_web_service.sh
 ```
 
-After installation, your web service will:
-- ✅ Start automatically on boot
-- ✅ Restart automatically on crash
-- ✅ Never stay down
-- ✅ Be monitored by systemd
-- ✅ Log to centralized journal
-- ✅ Be limited by resource constraints
-- ✅ Be production-ready!
+After installation, the web service will:
+- Start automatically on boot
+- Restart automatically on crash
+- Be monitored by systemd
+- Log to centralized journal
+- Operate within resource constraints
 
 ## For Questions or Issues
 
@@ -183,5 +181,3 @@ After installation, your web service will:
 3. Read docs: `docs/PRODUCTION_WEB_SERVICE.md`
 
 ---
-
-**Happy Deploying!** 🚀

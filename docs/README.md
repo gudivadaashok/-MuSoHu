@@ -1,6 +1,7 @@
+````markdown
 # MuSoHu Documentation
 
-Complete documentation for the MuSoHu Multi-Modal Social Human Navigation platform.
+Documentation for the MuSoHu Multi-Modal Social Human Navigation platform.
 
 ---
 
@@ -13,6 +14,12 @@ Complete documentation for the MuSoHu Multi-Modal Social Human Navigation platfo
 | [PRODUCTION_WEB_SERVICE.md](guides/PRODUCTION_WEB_SERVICE.md) | Production web service setup with automatic restart |
 | [PRODUCTION_SETUP.md](guides/PRODUCTION_SETUP.md) | Detailed systemd configuration and monitoring |
 | [INSTALLATION_SUMMARY.md](guides/INSTALLATION_SUMMARY.md) | Installation overview and next steps |
+
+### Web Application
+
+| Document | Description |
+|----------|-------------|
+| [WEB_LOG_VIEWER.md](guides/WEB_LOG_VIEWER.md) | Lightweight web-based log viewer with search and live tail |
 
 ### Reference
 
@@ -35,8 +42,9 @@ Complete documentation for the MuSoHu Multi-Modal Social Human Navigation platfo
 
 1. Start with the main [README.md](../README.md) in the project root
 2. Follow [PRODUCTION_WEB_SERVICE.md](guides/PRODUCTION_WEB_SERVICE.md) for quick deployment
-3. Check [QUICK_REFERENCE.md](reference/QUICK_REFERENCE.md) for common commands
-4. See [SCRIPTS_GUIDE.md](guides/SCRIPTS_GUIDE.md) for available scripts
+3. Check [WEB_LOG_VIEWER.md](guides/WEB_LOG_VIEWER.md) for log viewing and monitoring
+4. Check [QUICK_REFERENCE.md](reference/QUICK_REFERENCE.md) for common commands
+5. See [SCRIPTS_GUIDE.md](guides/SCRIPTS_GUIDE.md) for available scripts
 
 ### For Developers
 
@@ -75,6 +83,14 @@ Complete documentation for the MuSoHu Multi-Modal Social Human Navigation platfo
 - Logging system
 - Adding new scripts
 - Verification tools
+
+**[WEB_LOG_VIEWER.md](guides/WEB_LOG_VIEWER.md)**
+- Web-based log viewer features
+- YAML configuration guide
+- API endpoints and usage
+- Search and live tail functionality
+- File discovery and metadata
+- Troubleshooting tips
 
 ### Development Standards (standards/)
 
@@ -130,6 +146,9 @@ bash scripts/utils/detect_system_info.sh
 
 # Test production setup
 bash scripts/test/test_production_setup.sh
+
+# Access web log viewer
+# Open browser: http://localhost:8000/logs
 ```
 
 ---

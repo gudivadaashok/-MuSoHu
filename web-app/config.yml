@@ -22,9 +22,10 @@ logging:
 # Server Configuration
 server:
   host: 0.0.0.0
-  port: 80
+  port: 8000
   debug: false
   threaded: true
+  default_lines: 500  # Default number of lines to return when viewing logs
 
 # Auto-refresh intervals (in seconds)
 refresh_intervals:
@@ -32,28 +33,29 @@ refresh_intervals:
   disk_space: 10
   logs: 5
 
+# Log Directories Configuration
+# Each entry must have a unique 'key' for namespacing and an absolute or relative 'path'
+log_dirs:
+  - key: webapp
+    path: logs/
+    description: "Web Application Logs"
+  - key: ros2
+    path: ../helmet_logs/
+    description: "ROS2 Helmet Logs"
+  - key: system
+    path: ../logs/
+    description: "System Logs"
+
 # Log viewer settings
 log_viewer:
-  max_lines: 100  # Maximum number of log lines to display
-  # Allowed file extensions for viewing (only these types can be displayed)
+  max_lines: 500  # Maximum number of log lines to display
+  cache_ttl: 30  # Cache file list for 30 seconds to reduce I/O
   allowed_extensions:
     - .log
     - .txt
-  # Directories to scan for files
-  scan_directories:
-    - path: ../logs/
-      enabled: true
-      name_prefix: ""  # No prefix for files in main logs folder
-    - path: logs/
-      enabled: true
-      name_prefix: "WebApp - "  # Prefix for web-app logs folder
-    - path: ../helmet_logs/
-      enabled: true
-      name_prefix: "ROS2 - "  # Prefix for ROS2 log files
-  # Individual sources (optional, for specific files outside scan directories)
-  sources:
-    - id: app
-      name: Application Logs
-      path: logs/
-      enabled: false  # Disabled since logs/ is scanned automatically
+  # Enable search functionality
+  search:
+    enabled: true
+    max_results: 1000  # Maximum search results to return
+    case_sensitive: false
 

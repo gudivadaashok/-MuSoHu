@@ -1,10 +1,11 @@
+````markdown
 # MuSoHu Web Application - Development Guide
 
-Quick guide for running the MuSoHu web application in development mode.
+Guide for running the MuSoHu web application in development mode.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # 1. Navigate to web-app directory
@@ -25,7 +26,7 @@ That's it! The server will auto-reload when you make changes.
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 - Python 3.8 or higher
 - Virtual environment (`.venv/` in project root)
@@ -33,7 +34,7 @@ That's it! The server will auto-reload when you make changes.
 
 ---
 
-## 🔧 Setup (First Time)
+## Setup (First Time)
 
 ### 1. Create Virtual Environment
 
@@ -84,7 +85,7 @@ cat config.yml
 
 ---
 
-## 🏃 Running the Development Server
+## Running the Development Server
 
 ### Method 1: Direct Command (Recommended)
 
@@ -110,7 +111,7 @@ cd /path/to/MuSoHu/web-app
 
 ---
 
-## 🌐 Accessing the Application
+## Accessing the Application
 
 Once the server is running, you can access:
 
@@ -125,7 +126,7 @@ Once the server is running, you can access:
 
 ---
 
-## 🔄 Development Workflow
+## Development Workflow
 
 ### Making Changes
 
@@ -161,7 +162,7 @@ Once the server is running, you can access:
 
 ---
 
-## 🐛 Debugging
+## Debugging
 
 ### Enable Debug Mode
 
@@ -239,7 +240,7 @@ ls templates/  # Should show index.html, logs.html, disk_space.html
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### Manual Testing
 
@@ -279,7 +280,7 @@ tail -f logs/musohu.log
 
 ---
 
-## 📝 Development Tips
+## Development Tips
 
 ### VS Code Integration
 
@@ -339,7 +340,7 @@ curl http://localhost:8000/api/health
 
 ---
 
-## 🔐 Development vs Production
+## Development vs Production
 
 | Feature | Development | Production |
 |---------|------------|------------|
@@ -369,7 +370,7 @@ See [PRODUCTION_WEB_SERVICE.md](PRODUCTION_WEB_SERVICE.md) for production deploy
 
 ---
 
-## 🛑 Stopping the Server
+## Stopping the Server
 
 ```bash
 # Press Ctrl+C in the terminal running uvicorn
@@ -391,7 +392,7 @@ lsof -ti:8000 | xargs kill -9
 
 ---
 
-## 📚 Additional Resources
+## Additional Resources
 
 - **FastAPI Documentation**: https://fastapi.tiangolo.com/
 - **Uvicorn Documentation**: https://www.uvicorn.org/
@@ -406,7 +407,7 @@ lsof -ti:8000 | xargs kill -9
 
 ---
 
-## ✅ Quick Reference
+## Quick Reference
 
 ```bash
 # Start development server
@@ -433,7 +434,5 @@ pip install -r requirements.txt
 ```
 
 ---
-
-**Happy Developing! 🎉**
 
 *Last updated: November 12, 2025*

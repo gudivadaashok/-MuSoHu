@@ -1,18 +1,19 @@
+````markdown
 # MuSoHu Web Service - Production Setup Guide
 
-This guide explains how to set up the MuSoHu web application as a production-ready systemd service with automatic restart, resource limits, and centralized logging.
+This guide explains how to set up the MuSoHu web application as a systemd service with automatic restart, resource limits, and centralized logging.
 
 ## Features
 
- **Automatic Restart on Failure** - Service restarts automatically if it crashes  
- **Unlimited Restart Attempts** - No limit on restart attempts with 10-second delay  
- **Production ASGI Server** - Uvicorn handles async requests efficiently  
- **FastAPI Framework** - Modern, fast, async web framework  
- **Auto-start on Boot** - Service starts automatically when system boots  
- **Resource Limits** - CPU (50%) and Memory (1GB) limits prevent runaway processes  
- **Centralized Logging** - All logs go to systemd journal for easy monitoring  
- **Health Check Endpoint** - `/api/health` endpoint for monitoring and load balancers  
- **Standard HTTP Port** - Port 80 for standard web access  
+- **Automatic Restart on Failure** - Service restarts automatically if it crashes  
+- **Unlimited Restart Attempts** - No limit on restart attempts with 10-second delay  
+- **ASGI Server** - Uvicorn handles async requests  
+- **FastAPI Framework** - Async web framework  
+- **Auto-start on Boot** - Service starts automatically when system boots  
+- **Resource Limits** - CPU (50%) and Memory (1GB) limits  
+- **Centralized Logging** - Logs sent to systemd journal  
+- **Health Check Endpoint** - `/api/health` endpoint for monitoring  
+- **Standard HTTP Port** - Port 80 for web access  
 
 ## Quick Setup
 
@@ -171,14 +172,13 @@ sudo systemctl restart musohu-web
 
 ## Production Server (Uvicorn)
 
-The application uses **Uvicorn** ASGI server in production:
+The application uses Uvicorn ASGI server in production:
 
 ### Features:
-- Async/await support for better concurrency
-- WebSocket support (if needed in future)
+- Async/await support for concurrency
+- WebSocket support
 - HTTP/2 support (with additional configuration)
-- Production-ready performance and security
-- Better than traditional WSGI servers for async applications
+- Suitable for async applications
 
 ### Running with Multiple Workers:
 
