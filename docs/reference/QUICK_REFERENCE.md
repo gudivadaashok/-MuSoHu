@@ -3,7 +3,7 @@
 ## INSTALLATION
 
 ```bash
-sudo bash scripts/setup/setup_production_web_service.sh
+sudo bash scripts/deploy/setup_production_web_service.sh
 ```
 
 ## SERVICE CONTROL (Recommended - Easy to use)
@@ -107,7 +107,7 @@ bash scripts/utils/manage_web_service.sh test
 
 - **Service:** `/etc/systemd/system/musohu-web.service`
 - **App Config:** `web-app/config.yml`
-- **Template:** `scripts/setup/musohu-web.service.template`
+- **Template:** `scripts/deploy/templates/musohu-web.service.template`
 
 ### After editing service file:
 ```bash

@@ -23,7 +23,7 @@ This guide explains how to set up the MuSoHu web application as a production-rea
 cd /path/to/MuSoHu
 
 # Run the setup script with sudo
-sudo bash scripts/setup/setup_production_web_service.sh
+sudo bash scripts/deploy/setup_production_web_service.sh
 ```
 
 This script will:
@@ -426,8 +426,8 @@ systemd.daemon.notify('WATCHDOG=1')
 ## Files Created
 
 - `/etc/systemd/system/musohu-web.service` - Systemd service file
-- `scripts/setup/musohu-web.service.template` - Service template
-- `scripts/setup/setup_production_web_service.sh` - Setup script
+- `scripts/deploy/templates/musohu-web.service.template` - Service template
+- `scripts/deploy/setup_production_web_service.sh` - Setup script
 - `scripts/utils/manage_web_service.sh` - Management script
 
 ## Support

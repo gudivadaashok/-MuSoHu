@@ -508,7 +508,7 @@ Before committing a new script, ensure it has:
 - `scripts/SCRIPTS_GUIDE.md` - General guide to all scripts
 - `scripts/utils/logging_config.sh` - Centralized logging documentation
 - `scripts/utils/detect_system_info.sh` - Reference implementation
-- `scripts/setup/install_zed_sdk.sh` - Another complete example
+- `scripts/install/install_zed_sdk.sh` - Another complete example
 
 ---
 

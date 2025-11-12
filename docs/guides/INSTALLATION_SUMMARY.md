@@ -7,10 +7,10 @@
 - `web-app/requirements.txt` - Added waitress==3.0.0
 
 ### New Scripts
-- `scripts/setup/setup_production_web_service.sh`
+- `scripts/deploy/setup_production_web_service.sh`
 - `scripts/utils/manage_web_service.sh`
-- `scripts/setup/test_production_setup.sh`
-- `scripts/setup/musohu-web.service.template`
+- `scripts/test/test_production_setup.sh`
+- `scripts/deploy/templates/musohu-web.service.template`
 
 ### Documentation
 - `docs/PRODUCTION_WEB_SERVICE.md` - Main installation guide
@@ -50,7 +50,7 @@
 ### 1. Install the production service
 
 ```bash
-sudo bash scripts/setup/setup_production_web_service.sh
+sudo bash scripts/deploy/setup_production_web_service.sh
 ```
 
 This will:
@@ -65,7 +65,7 @@ This will:
 ### 2. Verify installation
 
 ```bash
-bash scripts/setup/test_production_setup.sh
+bash scripts/test/test_production_setup.sh
 ```
 
 ### 3. Check service status
@@ -106,7 +106,7 @@ bash scripts/utils/manage_web_service.sh health
 
 ### Testing
 ```bash
-bash scripts/setup/test_production_setup.sh
+bash scripts/test/test_production_setup.sh
 bash scripts/utils/manage_web_service.sh test
 ```
 
@@ -164,7 +164,7 @@ Service Running Again!
 The production setup is now ready. Just run the installation script:
 
 ```bash
-sudo bash scripts/setup/setup_production_web_service.sh
+sudo bash scripts/deploy/setup_production_web_service.sh
 ```
 
 After installation, your web service will:
@@ -179,7 +179,7 @@ After installation, your web service will:
 ## For Questions or Issues
 
 1. Check logs: `sudo journalctl -u musohu-web -n 100`
-2. Run tests: `bash scripts/setup/test_production_setup.sh`
+2. Run tests: `bash scripts/test/test_production_setup.sh`
 3. Read docs: `docs/PRODUCTION_WEB_SERVICE.md`
 
 ---

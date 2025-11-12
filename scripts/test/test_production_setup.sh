@@ -9,7 +9,7 @@
 #   runtime components, and scripts for proper configuration.
 #
 # Usage:
-#   bash scripts/setup/test_production_setup.sh [OPTIONS]
+#   bash scripts/test/test_production_setup.sh [OPTIONS]
 #
 # Options:
 #   -h, --help    Display help message
@@ -137,10 +137,10 @@ TEST CATEGORIES:
 
 EXAMPLES:
     # Run all tests
-    bash scripts/setup/test_production_setup.sh
+    bash scripts/test/test_production_setup.sh
     
     # Run with help
-    bash scripts/setup/test_production_setup.sh --help
+    bash scripts/test/test_production_setup.sh --help
 
 OUTPUT:
     Tests display:
@@ -516,7 +516,7 @@ print_summary() {
         echo -e "  ${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         echo ""
         echo "  Please review the failed tests above."
-        echo "  Consider running: sudo bash scripts/setup/setup_production_web_service.sh"
+        echo "  Consider running: sudo bash scripts/deploy/setup_production_web_service.sh"
         echo ""
     fi
     
@@ -525,7 +525,7 @@ print_summary() {
         echo "  Access at: http://localhost:$PORT"
     else
         echo "  Service Status: ${YELLOW}NOT RUNNING${NC}"
-        echo "  Install with: sudo bash scripts/setup/setup_production_web_service.sh"
+        echo "  Install with: sudo bash scripts/deploy/setup_production_web_service.sh"
     fi
     
     echo ""

@@ -170,7 +170,7 @@ For production deployment with automatic restart and systemd integration:
 
 ```bash
 # For production deployment, see production setup guide
-sudo bash ../scripts/setup/setup_production_web_service.sh
+sudo bash ../scripts/deploy/setup_production_web_service.sh
 ```
 
 **Production Mode Features**:

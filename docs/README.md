@@ -93,7 +93,7 @@ Complete documentation for the MuSoHu Multi-Modal Social Human Navigation platfo
 ### Deploy Production Service
 
 ```bash
-sudo bash scripts/setup/setup_production_web_service.sh
+sudo bash scripts/deploy/setup_production_web_service.sh
 ```
 
 ### Manage Web Service
@@ -129,7 +129,7 @@ sudo journalctl -u musohu-web -n 100
 bash scripts/utils/detect_system_info.sh
 
 # Test production setup
-bash scripts/setup/test_production_setup.sh
+bash scripts/test/test_production_setup.sh
 ```
 
 ---

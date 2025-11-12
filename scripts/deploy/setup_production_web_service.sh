@@ -12,7 +12,9 @@
 #   - Health check endpoint
 #
 # Usage:
-#   sudo bash scripts/setup/setup_production_web_service.sh
+# Example usage:
+#   sudo bash scripts/deploy/setup_production_web_service.sh
+#
 #
 # Requirements:
 #   - Ubuntu/Debian Linux with systemd
@@ -42,7 +44,7 @@ WEB_APP_DIR="${PROJECT_ROOT}/web-app"
 VENV_DIR="${WEB_APP_DIR}/venv"
 SERVICE_NAME="musohu-web"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
-TEMPLATE_FILE="${SCRIPT_DIR}/musohu-web.service.template"
+TEMPLATE_FILE="${SCRIPT_DIR}/templates/musohu-web.service.template"
 
 ################################################################################
 # Preflight Checks

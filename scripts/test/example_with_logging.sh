@@ -39,7 +39,7 @@
 
 # Source the logging configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/logging_config.sh"
+source "${SCRIPT_DIR}/../utils/logging_config.sh"
 
 # Script configuration
 SKIP_SLEEP=false

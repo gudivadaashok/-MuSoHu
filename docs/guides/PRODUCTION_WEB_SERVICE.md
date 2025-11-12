@@ -80,7 +80,7 @@ tmux new-session -d -s musohu-web '../.venv/bin/uvicorn app:app --host 0.0.0.0 -
 
 ```bash
 # One-command setup
-sudo bash scripts/setup/setup_production_web_service.sh
+sudo bash scripts/deploy/setup_production_web_service.sh
 ```
 
 **Production Features:**
@@ -339,10 +339,10 @@ uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 cd /path/to/MuSoHu
 
 # 2. Run production setup (one command!)
-sudo bash scripts/setup/setup_production_web_service.sh
+sudo bash scripts/deploy/setup_production_web_service.sh
 
 # 3. Verify installation
-bash scripts/setup/test_production_setup.sh
+bash scripts/test/test_production_setup.sh
 
 # 4. Access web interface
 curl http://localhost/api/health
@@ -383,9 +383,9 @@ curl http://localhost/api/health
 - `web-app/app.py` - FastAPI application with async support
 
 ### Scripts Available:
-- `scripts/setup/setup_production_web_service.sh` - Installation script
+- `scripts/deploy/setup_production_web_service.sh` - Installation script
 - `scripts/utils/manage_web_service.sh` - Easy management tool
-- `scripts/setup/test_production_setup.sh` - Verification tests
+- `scripts/test/test_production_setup.sh` - Verification tests
 
 ---
 
@@ -497,7 +497,7 @@ curl http://localhost/api/health
 
 ```bash
 # Run full test suite
-bash scripts/setup/test_production_setup.sh
+bash scripts/test/test_production_setup.sh
 ```
 
 This tests:
@@ -664,7 +664,7 @@ bash scripts/utils/manage_web_service.sh test
 
 ```bash
 # Re-run setup script
-sudo bash scripts/setup/setup_production_web_service.sh
+sudo bash scripts/deploy/setup_production_web_service.sh
 ```
 
 ---
@@ -819,7 +819,7 @@ scrape_configs:
 
 ## Getting Help
 
-1. **Run tests**: `bash scripts/setup/test_production_setup.sh`
+1. **Run tests**: `bash scripts/test/test_production_setup.sh`
 2. **Check logs**: `sudo journalctl -u musohu-web -n 100`
 3. **View status**: `bash scripts/utils/manage_web_service.sh stats`
 4. **Read docs**: See [PRODUCTION_SETUP.md](PRODUCTION_SETUP.md)
@@ -836,7 +836,7 @@ After installation, verify:
 - [ ] Health responds: `curl http://localhost/api/health`
 - [ ] Web UI accessible: Open http://localhost in browser
 - [ ] Logs visible: `sudo journalctl -u musohu-web -n 10`
-- [ ] Tests pass: `bash scripts/setup/test_production_setup.sh`
+- [ ] Tests pass: `bash scripts/test/test_production_setup.sh`
 - [ ] Port 80 listening: `sudo ss -tuln | grep :80`
 
 ---

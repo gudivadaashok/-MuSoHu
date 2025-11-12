@@ -215,10 +215,10 @@ ls -lt scripts/logs/script_name_*.log | head -5
 
 ```bash
 # Install ZED SDK
-sudo bash scripts/setup/install_zed_sdk.sh
+sudo bash scripts/install/install_zed_sdk.sh
 
-# Setup web service
-bash scripts/setup/setup_web_service.sh
+# Setup production web service
+bash scripts/deploy/setup_production_web_service.sh
 ```
 
 #### Utility Scripts

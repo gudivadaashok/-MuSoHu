@@ -38,8 +38,8 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Source logging configuration
-if [ -f "${SCRIPT_DIR}/logging_config.sh" ]; then
-    source "${SCRIPT_DIR}/logging_config.sh"
+if [ -f "${SCRIPT_DIR}/../utils/logging_config.sh" ]; then
+    source "${SCRIPT_DIR}/../utils/logging_config.sh"
 else
     # Fallback logging
     log_info() { echo "[INFO] $1"; }
