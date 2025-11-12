@@ -98,13 +98,13 @@ file_discovery = FileDiscoveryService(config)
 ROS2_SCRIPTS = {
     'helmet_nodes': {
         'command': 'ros2 launch helmet_bringup helmet.launch.py',
-        'description': 'MuSoHu Helmet Nodes',
+        'description': 'Launch Nodes',
         'status': 'stopped',
         'pid': None
     },
     'rviz2': {
         'command': 'ros2 run rviz2 rviz2',
-        'description': 'RViz2 Visualization',
+        'description': 'Record ROS Bags',
         'status': 'stopped',
         'pid': None
     }

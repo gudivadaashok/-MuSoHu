@@ -1,4 +1,3 @@
-````markdown
 # Web Log Viewer
 
 A web-based log viewer built with FastAPI and vanilla JavaScript. This application provides functionality for viewing, searching, and managing `.log` and `.txt` files from multiple configured directories.
@@ -406,12 +405,6 @@ Built following these principles:
 - YAML-based configuration
 - Read-only operations
 - File handling implementation
-
----
-
-## License
-
-This project is part of the MuSoHu system developed at RobotiXX Lab, George Mason University.
 
 ---
 

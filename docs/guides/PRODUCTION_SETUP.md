@@ -1,4 +1,3 @@
-````markdown
 # MuSoHu Web Service - Production Setup Guide
 
 This guide explains how to set up the MuSoHu web application as a systemd service with automatic restart, resource limits, and centralized logging.

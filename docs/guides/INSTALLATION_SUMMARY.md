@@ -1,4 +1,3 @@
-````markdown
 # MuSoHu Production Setup - Installation Summary
 
 ## Created Files

@@ -1,4 +1,3 @@
-````markdown
 # MuSoHu Production Web Service Setup
 
 Production setup for the MuSoHu web application with automatic restart, resource limits, and deployment features.
