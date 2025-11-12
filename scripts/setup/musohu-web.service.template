@@ -13,8 +13,8 @@ WorkingDirectory=WEB_APP_DIR_PLACEHOLDER
 Environment="PATH=WEB_APP_DIR_PLACEHOLDER/venv/bin:/usr/local/bin:/usr/bin:/bin"
 Environment="PYTHONUNBUFFERED=1"
 
-# Main process
-ExecStart=WEB_APP_DIR_PLACEHOLDER/venv/bin/python WEB_APP_DIR_PLACEHOLDER/app.py
+# Main process - Run with uvicorn ASGI server
+ExecStart=WEB_APP_DIR_PLACEHOLDER/venv/bin/uvicorn app:app --host 0.0.0.0 --port 80
 
 # Restart Configuration - Always restart on failure
 Restart=always

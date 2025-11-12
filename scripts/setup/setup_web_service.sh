@@ -16,13 +16,13 @@ show_help() {
     cat << EOF
 Usage: bash setup_web_service.sh [OPTIONS]
 
-Setup Flask web service for MuSoHu script management.
+Setup FastAPI web service for MuSoHu script management.
 
 This script:
   - Checks Python 3 and pip installation
   - Creates Python virtual environment in web-app/venv
-  - Installs Flask and dependencies from requirements.txt
-  - Creates necessary directories (instance, logs, uploads)
+  - Installs FastAPI, Uvicorn and dependencies from requirements.txt
+  - Creates necessary directories (logs)
   - Generates systemd service file
   - Creates startup script
 
@@ -35,9 +35,7 @@ Web Service Features:
 Directory Structure Created:
   web-app/
     ├── venv/              (Python virtual environment)
-    ├── instance/          (Application instance data)
     ├── logs/              (Application logs)
-    ├── uploads/           (File uploads)
     └── start_web_service.sh (Startup script)
 
 Service Configuration:
@@ -201,9 +199,7 @@ fi
 log_info "Creating necessary directories..."
 
 DIRS_TO_CREATE=(
-    "instance"
     "logs"
-    "uploads"
 )
 
 for dir in "${DIRS_TO_CREATE[@]}"; do
@@ -228,11 +224,11 @@ Description=MuSoHu Web Service for Script Management
 After=network.target
 
 [Service]
-Type=notify
+Type=simple
 User=$USER
 WorkingDirectory=$WEB_APP_DIR
 Environment="PATH=$WEB_APP_DIR/venv/bin"
-ExecStart=$WEB_APP_DIR/venv/bin/python app.py --host=0.0.0.0 --port=80
+ExecStart=$WEB_APP_DIR/venv/bin/uvicorn app:app --host 0.0.0.0 --port 80
 Restart=always
 RestartSec=10
 
@@ -278,31 +274,41 @@ cd "$WEB_APP_DIR"
 source "$VENV_DIR/bin/activate"
 
 echo "Virtual environment activated"
-echo "Starting Flask application on port 80..."
+echo "Starting FastAPI application on port 80..."
 echo ""
 echo "Web service will be available at:"
 echo "  http://localhost"
+echo "  http://$(hostname -I | awk '{print $1}')"
 echo ""
 echo "Note: Port 80 requires root/sudo privileges"
 echo "Press Ctrl+C to stop"
 echo ""
 
-python app.py --host=0.0.0.0 --port=80
+uvicorn app:app --host 0.0.0.0 --port 80
 EOF
 
 chmod +x "$STARTUP_SCRIPT"
 log_success "Startup script created: $STARTUP_SCRIPT"
 
 #***********************************************************************
-# Test Flask installation
+# Test FastAPI installation
 #***********************************************************************
 
-log_info "Testing Flask installation..."
-python -c "import flask; print('Flask version:', flask.__version__)"
+log_info "Testing FastAPI installation..."
+python -c "import fastapi; print('FastAPI version:', fastapi.__version__)"
 if [ $? -eq 0 ]; then
-    log_success "Flask is properly installed"
+    log_success "FastAPI is properly installed"
 else
-    log_error "Flask installation test failed"
+    log_error "FastAPI installation test failed"
+    exit 1
+fi
+
+log_info "Testing Uvicorn installation..."
+python -c "import uvicorn; print('Uvicorn version:', uvicorn.__version__)"
+if [ $? -eq 0 ]; then
+    log_success "Uvicorn is properly installed"
+else
+    log_error "Uvicorn installation test failed"
     exit 1
 fi
 

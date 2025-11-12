@@ -33,7 +33,7 @@ set -e
 #***********************************************************************
 
 SERVICE_NAME="musohu-web"
-PORT="5001"
+PORT="80"
 
 #***********************************************************************
 # Color Definitions
@@ -196,7 +196,7 @@ cmd_health() {
         exit 1
     fi
     
-    RESPONSE=$(curl -s -w "\n%{http_code}" http://localhost:$PORT/health 2>/dev/null)
+    RESPONSE=$(curl -s -w "\n%{http_code}" http://localhost:$PORT/api/health 2>/dev/null)
     HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
     BODY=$(echo "$RESPONSE" | head -n -1)
     
@@ -326,7 +326,7 @@ cmd_test() {
     
     # Check health endpoint
     if command -v curl &> /dev/null; then
-        if curl -s http://localhost:$PORT/health > /dev/null; then
+        if curl -s http://localhost:$PORT/api/health > /dev/null; then
             log_success " Health endpoint responding"
         else
             log_error "[FAIL] Health endpoint not responding"

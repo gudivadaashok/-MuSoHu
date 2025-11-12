@@ -6,11 +6,13 @@ This guide explains how to set up the MuSoHu web application as a production-rea
 
  **Automatic Restart on Failure** - Service restarts automatically if it crashes  
  **Unlimited Restart Attempts** - No limit on restart attempts with 10-second delay  
- **Production WSGI Server** - Waitress handles concurrent requests efficiently  
+ **Production ASGI Server** - Uvicorn handles async requests efficiently  
+ **FastAPI Framework** - Modern, fast, async web framework  
  **Auto-start on Boot** - Service starts automatically when system boots  
  **Resource Limits** - CPU (50%) and Memory (1GB) limits prevent runaway processes  
  **Centralized Logging** - All logs go to systemd journal for easy monitoring  
- **Health Check Endpoint** - `/health` endpoint for monitoring and load balancers  
+ **Health Check Endpoint** - `/api/health` endpoint for monitoring and load balancers  
+ **Standard HTTP Port** - Port 80 for standard web access  
 
 ## Quick Setup
 
@@ -39,7 +41,7 @@ This script will:
 sudo systemctl status musohu-web
 
 # Test health endpoint
-curl http://localhost:5001/health
+curl http://localhost/api/health
 
 # View recent logs
 sudo journalctl -u musohu-web -n 50
@@ -137,13 +139,15 @@ Location: `web-app/config.yml`
 ```yaml
 server:
   host: '0.0.0.0'
-  port: 5001
-  debug: false  # Set to false for production
+  port: 80           # Standard HTTP port (requires sudo)
+  debug: false       # Set to false for production
 
 log_viewer:
   max_lines: 100
   # ... other settings
 ```
+
+**Note**: Port 80 requires root/sudo privileges. The systemd service handles this automatically.
 
 ### Modifying Resource Limits
 
@@ -165,43 +169,45 @@ sudo systemctl daemon-reload
 sudo systemctl restart musohu-web
 ```
 
-## Production Server (Waitress)
+## Production Server (Uvicorn)
 
-The application automatically uses **Waitress** WSGI server in production mode:
+The application uses **Uvicorn** ASGI server in production:
 
 ### Features:
-- Multi-threaded (4 threads by default)
-- Connection pooling (100 connections)
-- Better performance than Flask dev server
-- Production-ready security
+- Async/await support for better concurrency
+- WebSocket support (if needed in future)
+- HTTP/2 support (with additional configuration)
+- Production-ready performance and security
+- Better than traditional WSGI servers for async applications
 
-### Configuration in app.py:
+### Running with Multiple Workers:
 
-```python
-serve(
-    app,
-    host=host,
-    port=port,
-    threads=4,              # Worker threads
-    connection_limit=100,   # Max connections
-    channel_timeout=120,    # Request timeout
-    cleanup_interval=30,    # Cleanup frequency
-    log_socket_errors=True
-)
+For better performance on multi-core systems, you can run multiple worker processes.
+
+Edit `/etc/systemd/system/musohu-web.service`:
+```ini
+ExecStart=/path/to/venv/bin/uvicorn app:app --host 0.0.0.0 --port 80 --workers 4
 ```
 
 ### Development vs Production:
 
-- **Development**: Set `debug: true` in `config.yml` → Uses Flask dev server
-- **Production**: Set `debug: false` → Uses Waitress WSGI server
+The application automatically uses Uvicorn in both modes, but you can enable auto-reload for development:
+
+```bash
+# Development (with auto-reload)
+uvicorn app:app --host 0.0.0.0 --port 80 --reload
+
+# Production (no reload, optimized)
+uvicorn app:app --host 0.0.0.0 --port 80
+```
 
 ## Health Check Endpoint
 
-The `/health` endpoint provides service status information:
+The `/api/health` endpoint provides service status information:
 
 ```bash
 # Check health
-curl http://localhost:5001/health
+curl http://localhost/api/health
 
 # Response:
 {
@@ -276,7 +282,7 @@ ps aux | grep "python.*app.py"
 sudo journalctl -u musohu-web -n 50 --no-pager
 
 # Check if port is in use
-sudo ss -tuln | grep 5001
+sudo ss -tuln | grep :80
 
 # Check file permissions
 ls -la /path/to/web-app/
@@ -435,5 +441,6 @@ For issues or questions:
 ## References
 
 - [Systemd Service Documentation](https://www.freedesktop.org/software/systemd/man/systemd.service.html)
-- [Waitress Documentation](https://docs.pylonsproject.org/projects/waitress/)
-- [Flask Production Deployment](https://flask.palletsprojects.com/en/latest/deploying/)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [Uvicorn Documentation](https://www.uvicorn.org/)
+- [FastAPI Deployment Guide](https://fastapi.tiangolo.com/deployment/)

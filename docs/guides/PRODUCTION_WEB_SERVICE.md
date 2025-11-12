@@ -15,8 +15,8 @@ sudo bash scripts/setup/setup_production_web_service.sh
 bash scripts/setup/test_production_setup.sh
 
 # 4. Access web interface
-curl http://localhost:5001/health
-# Open browser: http://localhost:5001
+curl http://localhost/api/health
+# Open browser: http://localhost
 ```
 
 **That's it!** Your production web service is now running with automatic restart capabilities.
@@ -30,13 +30,14 @@ curl http://localhost:5001/health
 | ** Automatic Restart** | `Restart=always` | Service recovers from crashes automatically |
 | ** Unlimited Restarts** | `StartLimitBurst=0` | No artificial limits on restart attempts |
 | ** Restart Delay** | `RestartSec=10` | 10-second delay prevents rapid restart loops |
-| ** Production Server** | Waitress WSGI | 10x+ better than Flask dev server |
-| ** Multi-threading** | 4 threads, 100 connections | Handle concurrent requests efficiently |
+| ** Production Server** | Uvicorn ASGI | Modern async server for FastAPI |
+| ** FastAPI Framework** | High-performance async | 2-3x faster than traditional frameworks |
 | ** Resource Limits** | 1GB RAM, 50% CPU | Prevents runaway processes |
 | ** Systemd Logging** | Journal integration | Centralized log management |
 | **Auto-start** | Boot integration | Starts automatically on system boot |
-| ** Health Checks** | `/health` endpoint | Monitor service health easily |
+| ** Health Checks** | `/api/health` endpoint | Monitor service health easily |
 | ** Security** | Process isolation | NoNewPrivileges, PrivateTmp |
+| ** Standard Port** | Port 80 | No port number needed in URLs |
 
 ---
 
@@ -45,11 +46,11 @@ curl http://localhost:5001/health
 ### Files Created:
 -  `/etc/systemd/system/musohu-web.service` - Systemd service file
 -  `web-app/venv/` - Python virtual environment  
--  All dependencies including Waitress WSGI server
+-  All dependencies including Uvicorn ASGI server
 
 ### Files Modified:
--  `web-app/requirements.txt` - Added `waitress==3.0.0`
--  `web-app/app.py` - Added Waitress support + `/health` endpoint
+-  `web-app/requirements.txt` - Updated with FastAPI dependencies
+-  `web-app/app.py` - FastAPI application with async support
 
 ### Scripts Available:
 -  `scripts/setup/setup_production_web_service.sh` - Installation script
@@ -141,14 +142,14 @@ bash scripts/utils/manage_web_service.sh stats
 sudo systemctl show musohu-web -p NRestarts
 ```
 
-### Health Check
+### Check Health
 
 ```bash
 # Using management script
 bash scripts/utils/manage_web_service.sh health
 
 # Using curl
-curl http://localhost:5001/health
+curl http://localhost/api/health
 
 # Expected response:
 {
@@ -184,13 +185,13 @@ This tests:
 sudo systemctl status musohu-web
 
 # 2. Test health endpoint
-curl http://localhost:5001/health
+curl http://localhost/api/health
 
 # 3. Test web interface
-curl http://localhost:5001/
+curl http://localhost/
 
 # 4. Test from another machine (replace <your-ip>)
-curl http://<your-ip>:5001/health
+curl http://<your-ip>/api/health
 
 # 5. View recent logs
 sudo journalctl -u musohu-web -n 50
@@ -207,9 +208,11 @@ Edit `web-app/config.yml`:
 ```yaml
 server:
   host: '0.0.0.0'      # Listen on all interfaces
-  port: 5001           # Port number
-  debug: false         # false = Production (Waitress), true = Development (Flask)
+  port: 80             # Standard HTTP port (requires sudo)
+  debug: false         # false = Production mode
 ```
+
+**Note**: Port 80 requires root/sudo privileges. The service runs as your user but binds to port 80 through the systemd service configuration.
 
 ### Service Settings
 
@@ -250,10 +253,10 @@ sudo journalctl -u musohu-web -n 100
 sudo systemctl status musohu-web
 
 # Check if port is already in use
-sudo ss -tuln | grep 5001
+sudo ss -tuln | grep :80
 
-# Kill process on port 5001 if needed
-sudo lsof -ti:5001 | xargs sudo kill -9
+# Kill process on port 80 if needed
+sudo lsof -ti:80 | xargs sudo kill -9
 ```
 
 ### Service Keeps Restarting
@@ -273,17 +276,17 @@ sudo journalctl -u musohu-web | grep -i "error\|exception\|traceback"
 
 ```bash
 # Check if service is listening
-sudo ss -tuln | grep 5001
+sudo ss -tuln | grep :80
 
 # Check firewall
 sudo ufw status
-sudo ufw allow 5001/tcp
+sudo ufw allow 80/tcp
 
 # Test locally first
-curl http://localhost:5001/health
+curl http://localhost/api/health
 
 # Then test network access
-curl http://$(hostname -I | awk '{print $1}'):5001/health
+curl http://$(hostname -I | awk '{print $1}')/api/health
 ```
 
 ### High Memory Usage
@@ -358,29 +361,18 @@ rm -rf web-app/venv
 
 ##  Performance Tips
 
-### Increase Worker Threads
+### Uvicorn Workers
 
-Edit `web-app/app.py`:
-```python
-serve(
-    app,
-    host=host,
-    port=port,
-    threads=8,  # Increase from 4 to 8
-    # ...
-)
+For better performance, you can run multiple worker processes:
+
+Edit `/etc/systemd/system/musohu-web.service`:
+```ini
+ExecStart=/path/to/venv/bin/uvicorn app:app --host 0.0.0.0 --port 80 --workers 4
 ```
 
-### Increase Connection Limit
+### Async Performance
 
-```python
-serve(
-    app,
-    # ...
-    connection_limit=200,  # Increase from 100 to 200
-    # ...
-)
-```
+FastAPI supports async/await for better concurrent performance. The application already uses async where appropriate for handling multiple requests efficiently.
 
 ### Increase Resource Limits
 
@@ -407,19 +399,26 @@ The service includes security hardening:
 
 ### With Nginx Reverse Proxy
 
+If you want to add HTTPS or additional security:
+
 ```nginx
 server {
-    listen 80;
+    listen 443 ssl;
     server_name your-domain.com;
     
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+    
     location / {
-        proxy_pass http://localhost:5001;
+        proxy_pass http://localhost:80;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
     
-    location /health {
-        proxy_pass http://localhost:5001/health;
+    location /api/health {
+        proxy_pass http://localhost:80/api/health;
         access_log off;
     }
 }
@@ -431,8 +430,8 @@ server {
 scrape_configs:
   - job_name: 'musohu-web'
     static_configs:
-      - targets: ['localhost:5001']
-    metrics_path: '/health'
+      - targets: ['localhost:80']
+    metrics_path: '/api/health'
 ```
 
 ---
@@ -440,8 +439,9 @@ scrape_configs:
 ##  Additional Resources
 
 - **systemd Documentation**: https://www.freedesktop.org/software/systemd/man/
-- **Waitress Documentation**: https://docs.pylonsproject.org/projects/waitress/
-- **Flask Deployment**: https://flask.palletsprojects.com/en/latest/deploying/
+- **FastAPI Documentation**: https://fastapi.tiangolo.com/
+- **Uvicorn Documentation**: https://www.uvicorn.org/
+- **FastAPI Deployment**: https://fastapi.tiangolo.com/deployment/
 
 ---
 
@@ -461,10 +461,11 @@ After installation, verify:
 
 - [ ] Service is running: `sudo systemctl is-active musohu-web`
 - [ ] Auto-start enabled: `sudo systemctl is-enabled musohu-web`
-- [ ] Health responds: `curl http://localhost:5001/health`
-- [ ] Web UI accessible: Open http://localhost:5001 in browser
+- [ ] Health responds: `curl http://localhost/api/health`
+- [ ] Web UI accessible: Open http://localhost in browser
 - [ ] Logs visible: `sudo journalctl -u musohu-web -n 10`
 - [ ] Tests pass: `bash scripts/setup/test_production_setup.sh`
+- [ ] Port 80 listening: `sudo ss -tuln | grep :80`
 
 ---
 

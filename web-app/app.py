@@ -2,37 +2,76 @@
 MuSoHu Web Application
 Manages ROS2 scripts, displays logs, and monitors system resources
 """
-from flask import Flask, render_template, jsonify, request, send_file
-from flask_cors import CORS
+from fastapi import FastAPI, Request, Query
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 import subprocess
 import os
 import shutil
-import yaml
+import logging
 from datetime import datetime
-from logging_config import setup_logging
+import yaml
 
-# Initialize Flask app
-app = Flask(__name__)
-CORS(app)
+# Initialize FastAPI app
+app = FastAPI()
 
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Setup templates
+templates = Jinja2Templates(directory="templates")
+
+# Setup logger
+logger = logging.getLogger("uvicorn")
+
+# Load configuration
 def load_config():
-    """Load configuration from YAML file"""
+    """Load configuration from config.yml"""
     config_path = 'config.yml'
     if os.path.exists(config_path):
-        with open(config_path, 'r') as f:
-            return yaml.safe_load(f)
-    return {}
+        try:
+            with open(config_path, 'r') as f:
+                return yaml.safe_load(f)
+        except Exception as e:
+            logger.error(f"Error loading config.yml: {e}")
+            return get_default_config()
+    else:
+        logger.warning("config.yml not found, using default configuration")
+        return get_default_config()
 
+def get_default_config():
+    """Return default configuration"""
+    return {
+        'log_viewer': {
+            'max_lines': 100,
+            'scan_directories': [],
+            'sources': [],
+            'allowed_extensions': ['.log', '.txt']
+        },
+        'server': {
+            'host': '0.0.0.0',
+            'port': 8000
+        },
+        'refresh_intervals': {
+            'scripts': 5,
+            'disk_space': 10,
+            'logs': 5
+        }
+    }
 
 # Load configuration
 config = load_config()
-
-# Setup logging
-logger = setup_logging(app)
-
-# Store running processes
-running_processes = {}
 
 # Define available ROS2 scripts
 ROS2_SCRIPTS = {
@@ -50,71 +89,80 @@ ROS2_SCRIPTS = {
     }
 }
 
+running_processes = {}
 
-# ============================================================================
-# Page Routes
-# ============================================================================
+# ---------------------------- Page Routes -----------------------------
 
-@app.route('/')
-def index():
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
     """Main page - Scripts management"""
-    return render_template('index.html')
+    refresh_interval = config.get('refresh_intervals', {}).get('scripts', 5)
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "refresh_interval": refresh_interval
+    })
 
 
-@app.route('/disk-space')
-def disk_space():
+@app.get("/disk-space", response_class=HTMLResponse)
+async def disk_space(request: Request):
     """Disk space monitoring page"""
-    return render_template('disk_space.html')
+    refresh_interval = config.get('refresh_intervals', {}).get('disk_space', 10)
+    return templates.TemplateResponse("disk_space.html", {
+        "request": request,
+        "refresh_interval": refresh_interval
+    })
 
 
-@app.route('/logs')
-def logs():
+@app.get("/logs", response_class=HTMLResponse)
+async def logs(request: Request):
     """Log viewer page"""
-    return render_template('logs.html')
+    refresh_interval = config.get('refresh_intervals', {}).get('logs', 5)
+    return templates.TemplateResponse("logs.html", {
+        "request": request,
+        "refresh_interval": refresh_interval
+    })
 
 
 # ============================================================================
 # API Routes - Health Check
-# ============================================================================
-
-@app.route('/health', methods=['GET'])
-def health_check():
+# ----------------------- API Routes - Health Check --------------------------
+@app.get("/api/health")
+async def health_check():
     """Health check endpoint for monitoring"""
-    return jsonify({
+    return JSONResponse(content={
         'status': 'healthy',
         'running_scripts': len(running_processes),
         'timestamp': datetime.now().isoformat()
-    }), 200
+    })
 
 
 # ============================================================================
 # API Routes - Scripts
 # ============================================================================
 
-@app.route('/api/scripts', methods=['GET'])
-def get_scripts():
-    """Get status of all ROS2 scripts"""
+# ------------------------- API Routes - Scripts -----------------------------
+
+@app.get("/api/scripts")
+async def list_scripts():
+    """List all available ROS2 scripts and their status"""
     # Update status based on actual process state
-    for script_id in running_processes.copy():
+    for script_id in list(running_processes):
         process = running_processes[script_id]
         if process.poll() is not None:
             # Process has terminated
             del running_processes[script_id]
             ROS2_SCRIPTS[script_id]['status'] = 'stopped'
             ROS2_SCRIPTS[script_id]['pid'] = None
-    
-    return jsonify(ROS2_SCRIPTS)
+
+    return JSONResponse(content=ROS2_SCRIPTS)
 
 
-# ============================================================================
-# API Routes - System Monitoring
-# ============================================================================
+# -------------------- API Routes - System Monitoring -----------------------
 
-@app.route('/api/disk-space', methods=['GET'])
-def get_disk_space():
+@app.get("/api/disk-space")
+async def get_disk_space():
     """Get disk space information"""
     try:
-        # Get disk space statistics for the current directory
         total, used, free = shutil.disk_usage('/')
 
         # Convert bytes to GB
@@ -129,19 +177,14 @@ def get_disk_space():
             'percent_used': f'{(used / total) * 100:.1f}%'
         }
 
-        logger.info(f'Disk space checked: {disk_info}')
-        return jsonify(disk_info)
+        return JSONResponse(content=disk_info)
     except Exception as e:
-        logger.error(f'Failed to get disk space: {str(e)}')
-        return jsonify({'error': str(e)}), 500
+        return JSONResponse(content={'error': str(e)}, status_code=500)
 
-@app.route('/api/logs', methods=['GET'])
-def get_logs():
+@app.get("/api/logs")
+async def get_logs(source: str = Query(default="musohu", alias="source")):
     try:
-        # Get log source from query parameter (default: 'musohu')
-        log_source = request.args.get('source', 'musohu')
-
-        # Load log sources from config
+        log_source = source
         log_viewer_config = config.get('log_viewer', {})
         max_lines = log_viewer_config.get('max_lines', 100)
 
@@ -194,10 +237,10 @@ def get_logs():
             file_extension = os.path.splitext(log_file)[1]
 
             if file_extension not in allowed_extensions:
-                return jsonify({
+                return JSONResponse(content={
                     'logs': [],
                     'error': f'Unable to display this file type. Only {", ".join(allowed_extensions)} files can be displayed.'
-                }), 400
+                }, status_code=400)
 
             try:
                 with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
@@ -235,34 +278,31 @@ def get_logs():
                                     'message': line
                                 })
             except UnicodeDecodeError:
-                return jsonify({
+                return JSONResponse(content={
                     'logs': [],
                     'error': 'Unable to display this file. The file contains non-text or binary data.'
-                }), 400
+                }, status_code=400)
             except Exception as read_error:
                 logger.error(f'Error reading file {log_file}: {str(read_error)}')
-                return jsonify({
+                return JSONResponse(content={
                     'logs': [],
                     'error': f'Error reading file: {str(read_error)}'
-                }), 500
+                }, status_code=500)
         else:
-            return jsonify({'logs': [], 'error': f'Log file not found: {log_file}'}), 404
+            return JSONResponse(content={'logs': [], 'error': f'Log file not found: {log_file}'}, status_code=404)
 
-        return jsonify({'logs': logs, 'source': log_source})
+        return JSONResponse(content={'logs': logs, 'source': log_source})
     except Exception as e:
         logger.error(f'Failed to read logs: {str(e)}')
-        return jsonify({'error': str(e)}), 500
+        return JSONResponse(content={'error': str(e)}, status_code=500)
 
 
-# ============================================================================
-# API Routes - Log Management
-# ============================================================================
+# --------------------- API Routes - Log Management -------------------------
 
-@app.route('/api/logs/sources', methods=['GET'])
-def get_log_sources():
-    """Return available log sources - auto-discover all files from configured directories"""
+@app.get("/api/logs/sources")
+async def get_log_sources():
+    """Get all available log sources"""
     sources = {}
-
     # Get scan directories from config
     log_viewer_config = config.get('log_viewer', {})
     scan_directories = log_viewer_config.get('scan_directories', [])
@@ -322,19 +362,13 @@ def get_log_sources():
                         'exists': True
                     }
 
-    return jsonify(sources)
+    return JSONResponse(content=sources)
 
-@app.route('/api/logs/download', methods=['GET'])
-def download_log():
+@app.get("/api/logs/download")
+async def download_log(source: str = Query(default="", alias="source")):
     """Download a log file"""
     try:
-        # Get log source from query parameter
-        log_source = request.args.get('source', '')
-
-        if not log_source:
-            return jsonify({'error': 'No source specified'}), 400
-
-        # Load log sources from config
+        log_source = source
         log_viewer_config = config.get('log_viewer', {})
 
         # Build log files mapping by scanning directories
@@ -368,37 +402,36 @@ def download_log():
                 log_files[source['id']] = (source['path'], os.path.basename(source['path']))
 
         if log_source not in log_files:
-            return jsonify({'error': 'Log file not found'}), 404
+            return JSONResponse(content={'error': 'Log file not found'}, status_code=404)
 
         log_file_path, original_filename = log_files[log_source]
 
         if not os.path.exists(log_file_path):
-            return jsonify({'error': 'Log file not found on disk'}), 404
+            return JSONResponse(content={'error': 'Log file not found on disk'}, status_code=404)
 
         logger.info(f'Downloading log file: {original_filename}')
-        return send_file(
+        return FileResponse(
             log_file_path,
-            as_attachment=True,
-            download_name=original_filename,
-            mimetype='text/plain'
+            media_type='application/octet-stream',
+            filename=original_filename
         )
     except Exception as e:
         logger.error(f'Failed to download log: {str(e)}')
-        return jsonify({'error': str(e)}), 500
+        return JSONResponse(content={'error': str(e)}, status_code=500)
 
-@app.route('/api/scripts/<script_id>/start', methods=['POST'])
-def start_script(script_id):
+@app.post("/api/scripts/{script_id}/start")
+async def start_script(script_id: str):
     """Start a ROS2 script"""
     logger.info(f'Attempting to start script: {script_id}')
     
     if script_id not in ROS2_SCRIPTS:
         logger.error(f'Script not found: {script_id}')
-        return jsonify({'error': 'Script not found'}), 404
-    
+        return JSONResponse(content={'error': 'Script not found'}, status_code=404)
+
     if script_id in running_processes:
         logger.warning(f'Script already running: {script_id}')
-        return jsonify({'error': 'Script already running'}), 400
-    
+        return JSONResponse(content={'error': 'Script already running'}, status_code=400)
+
     try:
         command = ROS2_SCRIPTS[script_id]['command']
         script_name = ROS2_SCRIPTS[script_id]['description']
@@ -415,23 +448,23 @@ def start_script(script_id):
         # Update tracking
         running_processes[script_id] = process
         ROS2_SCRIPTS[script_id]['status'] = 'running'
-        ROS2_SCRIPTS[script_id]['pid'] = process.pid
-        
+        ROS2_SCRIPTS[script_id]['pid'] = str(process.pid)  # Fix type mismatch
+
         logger.info(f'Successfully started {script_id} with PID: {process.pid}')
-        return jsonify({
-            'message': f'✓ Started {script_name} (PID: {process.pid})',
+        return JSONResponse(content={
+            'message': f'Started {script_name} (PID: {process.pid})',
             'pid': process.pid
         })
     except Exception as e:
         logger.error(f'Failed to start {script_id}: {str(e)}')
-        return jsonify({'error': str(e)}), 500
+        return JSONResponse(content={'error': str(e)}, status_code=500)
 
 
-@app.route('/api/scripts/<script_id>/stop', methods=['POST'])
-def stop_script(script_id):
+@app.post("/api/scripts/{script_id}/stop")
+async def stop_script(script_id: str):
     """Stop a running ROS2 script"""
     if script_id not in ROS2_SCRIPTS:
-        return jsonify({'error': 'Invalid script ID'}), 400
+        return JSONResponse(content={'error': 'Invalid script ID'}, status_code=400)
 
     logger.info(f'Attempting to stop script: {script_id}')
     
@@ -443,8 +476,8 @@ def stop_script(script_id):
     
     if script_id not in running_processes:
         logger.warning(f'{script_id} is already stopped')
-        return jsonify({'message': f'✓ {script_name} is already stopped'})
-    
+        return JSONResponse(content={'message': f'{script_name} is already stopped'})
+
     try:
         process = running_processes[script_id]
         pid = process.pid
@@ -453,8 +486,8 @@ def stop_script(script_id):
         if process.poll() is not None:
             # Process already terminated
             del running_processes[script_id]
-            return jsonify({'message': f'✓ Stopped {script_name} (PID: {pid})'})
-        
+            return JSONResponse(content={'message': f'Stopped {script_name} (PID: {pid})'})
+
         # Terminate the process gracefully
         try:
             process.terminate()
@@ -469,53 +502,15 @@ def stop_script(script_id):
 
         del running_processes[script_id]
         
-        logger.info(f'Successfully stopped {script_id} (PID: {pid})')
-        return jsonify({'message': f'✓ Stopped {script_name} (PID: {pid})'})
+        logger.info(f"Successfully stopped {script_id} (PID: {pid})")
+        return JSONResponse(content={'message': f'Stopped {script_name} (PID: {pid})'})
     except Exception as e:
         logger.error(f'Error stopping {script_id}: {str(e)}')
         # Clean up even on error
         if script_id in running_processes:
             del running_processes[script_id]
-        return jsonify({'message': f'✓ Stopped {script_name}'})
+        return JSONResponse(content={'message': f'Stopped {script_name}'})
 
-
-# ============================================================================
-# Application Entry Point
-# ============================================================================
-
-if __name__ == '__main__':
-    server_config = config.get('server', {})
-    host = server_config.get('host', '0.0.0.0')
-    port = server_config.get('port', 5001)
-    debug = server_config.get('debug', False)
-
-    logger.info('=' * 70)
-    logger.info('Starting MuSoHu Web Application')
-    logger.info(f'Available scripts: {", ".join(ROS2_SCRIPTS.keys())}')
-    logger.info(f'Server: http://{host}:{port}')
-    logger.info('=' * 70)
-
-    # Use Waitress for production, Flask dev server for development
-    if debug:
-        logger.info('Running in DEBUG mode with Flask development server')
-        logger.warning('⚠️  NOT suitable for production use!')
-        app.run(host=host, port=port, debug=debug)
-    else:
-        try:
-            from waitress import serve
-            logger.info('Starting with Waitress (production WSGI server)')
-            logger.info(f'Threads: 4, Connection limit: 100')
-            serve(
-                app,
-                host=host,
-                port=port,
-                threads=4,
-                connection_limit=100,
-                channel_timeout=120,
-                cleanup_interval=30,
-                log_socket_errors=True
-            )
-        except ImportError:
-            logger.warning('⚠️  Waitress not found! Install with: pip install waitress')
-            logger.warning('Falling back to Flask development server (NOT recommended for production)')
-            app.run(host=host, port=port, debug=False)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app:app", host="0.0.0.0", port=80, reload=True)

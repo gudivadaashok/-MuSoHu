@@ -118,12 +118,12 @@ setup_python_environment() {
         log_warning "requirements.txt not found"
     fi
 
-    # Verify waitress is installed
-    if sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && python -c 'import waitress' 2>/dev/null"; then
-        log_success "Waitress WSGI server is installed"
+    # Verify uvicorn is installed
+    if sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && python -c 'import uvicorn' 2>/dev/null"; then
+        log_success "Uvicorn ASGI server is installed"
     else
-        log_warning "Waitress not found, installing..."
-        sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && pip install waitress"
+        log_warning "Uvicorn not found, installing..."
+        sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && pip install uvicorn"
     fi
 
     log_success "Python environment ready"
@@ -199,15 +199,15 @@ configure_firewall() {
 
     if command -v ufw &> /dev/null; then
         if ufw status | grep -q "Status: active"; then
-            log_info "UFW is active, checking port 5001..."
+            log_info "UFW is active, checking port 80..."
             
             # Check if port is already allowed
-            if ! ufw status | grep -q "5001"; then
-                log_info "Opening port 5001..."
-                ufw allow 5001/tcp comment "MuSoHu Web Service"
-                log_success "Port 5001 opened in firewall"
+            if ! ufw status | grep -q "80/tcp"; then
+                log_info "Opening port 80..."
+                ufw allow 80/tcp comment "MuSoHu Web Service"
+                log_success "Port 80 opened in firewall"
             else
-                log_info "Port 5001 is already open"
+                log_info "Port 80 is already open"
             fi
         else
             log_info "UFW is not active"
@@ -232,21 +232,21 @@ verify_installation() {
     echo ""
 
     # Check if service is listening on port
-    log_info "Checking if service is listening on port 5001..."
+    log_info "Checking if service is listening on port 80..."
     sleep 1
     
     if command -v ss &> /dev/null; then
-        if ss -tuln | grep -q ":5001"; then
-            log_success "Service is listening on port 5001"
+        if ss -tuln | grep -q ":80"; then
+            log_success "Service is listening on port 80"
         else
-            log_warning "Port 5001 not found in listening ports"
+            log_warning "Port 80 not found in listening ports"
         fi
     fi
 
     # Try to access health endpoint
     if command -v curl &> /dev/null; then
         log_info "Testing health endpoint..."
-        if curl -s http://localhost:5001/health > /dev/null; then
+        if curl -s http://localhost:80/api/health > /dev/null; then
             log_success "Health endpoint responding"
         else
             log_warning "Health endpoint not responding yet"
@@ -276,7 +276,7 @@ display_usage_info() {
     echo "  Recent:   sudo journalctl -u $SERVICE_NAME -n 50"
     echo ""
     echo "Monitoring:"
-    echo "  Health:   curl http://localhost:5001/health"
+    echo "  Health:   curl http://localhost/api/health"
     echo "  Restarts: sudo systemctl show $SERVICE_NAME -p NRestarts"
     echo ""
     echo "Boot Configuration:"
@@ -284,8 +284,8 @@ display_usage_info() {
     echo "  Disable:  sudo systemctl disable $SERVICE_NAME"
     echo ""
     echo "Web Interface:"
-    echo "  Local:    http://localhost:5001"
-    echo "  Network:  http://$(hostname -I | awk '{print $1}'):5001"
+    echo "  Local:    http://localhost"
+    echo "  Network:  http://$(hostname -I | awk '{print $1}')"
     echo ""
     echo "Configuration File: $SERVICE_FILE"
     echo "=========================================="
