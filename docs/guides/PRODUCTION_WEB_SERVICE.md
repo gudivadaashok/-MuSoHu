@@ -386,7 +386,6 @@ curl http://localhost/api/health
 - `scripts/setup/setup_production_web_service.sh` - Installation script
 - `scripts/utils/manage_web_service.sh` - Easy management tool
 - `scripts/setup/test_production_setup.sh` - Verification tests
-- `scripts/setup/QUICK_REFERENCE.sh` - Command reference
 
 ---
 
@@ -395,7 +394,8 @@ curl http://localhost/api/health
 - **[PRODUCTION_SETUP.md](PRODUCTION_SETUP.md)** - Complete setup guide with all details
 - **[CHANGES_SUMMARY.md](CHANGES_SUMMARY.md)** - What was changed and why
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Visual architecture diagrams
-- **[QUICK_REFERENCE.sh](QUICK_REFERENCE.sh)** - Quick command reference card
+- **[QUICK_REFERENCE.md](../reference/QUICK_REFERENCE.md)** - Quick command reference card
+- **[INSTALLATION_SUMMARY.md](INSTALLATION_SUMMARY.md)** - Installation overview and next steps
 
 ---
 
@@ -823,7 +823,7 @@ scrape_configs:
 2. **Check logs**: `sudo journalctl -u musohu-web -n 100`
 3. **View status**: `bash scripts/utils/manage_web_service.sh stats`
 4. **Read docs**: See [PRODUCTION_SETUP.md](PRODUCTION_SETUP.md)
-5. **Quick reference**: `bash scripts/setup/QUICK_REFERENCE.sh`
+5. **Quick reference**: See [docs/reference/QUICK_REFERENCE.md](../reference/QUICK_REFERENCE.md)
 
 ---
 

@@ -12,6 +12,13 @@ Complete documentation for the MuSoHu Multi-Modal Social Human Navigation platfo
 |----------|-------------|
 | [PRODUCTION_WEB_SERVICE.md](guides/PRODUCTION_WEB_SERVICE.md) | Production web service setup with automatic restart |
 | [PRODUCTION_SETUP.md](guides/PRODUCTION_SETUP.md) | Detailed systemd configuration and monitoring |
+| [INSTALLATION_SUMMARY.md](guides/INSTALLATION_SUMMARY.md) | Installation overview and next steps |
+
+### Reference
+
+| Document | Description |
+|----------|-------------|
+| [QUICK_REFERENCE.md](reference/QUICK_REFERENCE.md) | Quick command reference for service management |
 
 ### Development
 
@@ -28,7 +35,8 @@ Complete documentation for the MuSoHu Multi-Modal Social Human Navigation platfo
 
 1. Start with the main [README.md](../README.md) in the project root
 2. Follow [PRODUCTION_WEB_SERVICE.md](guides/PRODUCTION_WEB_SERVICE.md) for quick deployment
-3. Check [SCRIPTS_GUIDE.md](guides/SCRIPTS_GUIDE.md) for available scripts
+3. Check [QUICK_REFERENCE.md](reference/QUICK_REFERENCE.md) for common commands
+4. See [SCRIPTS_GUIDE.md](guides/SCRIPTS_GUIDE.md) for available scripts
 
 ### For Developers
 

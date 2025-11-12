@@ -471,12 +471,12 @@ test_scripts() {
         test_warning "Management script not executable (use: chmod +x)"
     fi
     
-    # Test 3: Quick reference is executable
-    test_start "Quick reference script is executable"
-    if [[ -x "$SCRIPT_DIR/QUICK_REFERENCE.sh" ]]; then
+    # Test 3: Quick reference documentation exists
+    test_start "Quick reference documentation exists"
+    if [[ -f "$PROJECT_ROOT/docs/reference/QUICK_REFERENCE.md" ]]; then
         test_pass
     else
-        test_warning "Quick reference not executable (use: chmod +x)"
+        test_warning "Quick reference documentation not found"
     fi
 }
 
