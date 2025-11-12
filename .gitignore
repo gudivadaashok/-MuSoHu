@@ -59,6 +59,11 @@ Thumbs.db
 logs/
 log/
 
+# Helmet logs - keep directory and README, ignore log files
+src/install/helmet_bringup/share/helmet_logs/*.log
+src/install/helmet_bringup/share/helmet_logs/*.txt
+!src/install/helmet_bringup/share/helmet_logs/README.md
+
 # Docker
 .docker/
 docker-compose.override.yml

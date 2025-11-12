@@ -26,8 +26,6 @@
 #   ./detect_system_info.sh
 #   source detect_system_info.sh && detect_all
 #
-# Author: MuSoHu Team
-# Date: November 2025
 #***********************************************************************
 
 #***********************************************************************

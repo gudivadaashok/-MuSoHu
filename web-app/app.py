@@ -8,6 +8,7 @@ import subprocess
 import os
 import shutil
 import yaml
+from datetime import datetime
 from logging_config import setup_logging
 
 # Initialize Flask app
@@ -70,6 +71,20 @@ def disk_space():
 def logs():
     """Log viewer page"""
     return render_template('logs.html')
+
+
+# ============================================================================
+# API Routes - Health Check
+# ============================================================================
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for monitoring"""
+    return jsonify({
+        'status': 'healthy',
+        'running_scripts': len(running_processes),
+        'timestamp': datetime.now().isoformat()
+    }), 200
 
 
 # ============================================================================
@@ -480,4 +495,27 @@ if __name__ == '__main__':
     logger.info(f'Server: http://{host}:{port}')
     logger.info('=' * 70)
 
-    app.run(host=host, port=port, debug=debug)
+    # Use Waitress for production, Flask dev server for development
+    if debug:
+        logger.info('Running in DEBUG mode with Flask development server')
+        logger.warning('⚠️  NOT suitable for production use!')
+        app.run(host=host, port=port, debug=debug)
+    else:
+        try:
+            from waitress import serve
+            logger.info('Starting with Waitress (production WSGI server)')
+            logger.info(f'Threads: 4, Connection limit: 100')
+            serve(
+                app,
+                host=host,
+                port=port,
+                threads=4,
+                connection_limit=100,
+                channel_timeout=120,
+                cleanup_interval=30,
+                log_socket_errors=True
+            )
+        except ImportError:
+            logger.warning('⚠️  Waitress not found! Install with: pip install waitress')
+            logger.warning('Falling back to Flask development server (NOT recommended for production)')
+            app.run(host=host, port=port, debug=False)

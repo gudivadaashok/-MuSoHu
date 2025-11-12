@@ -3,9 +3,94 @@
 #***********************************************************************
 # Download Driver Script for MuSoHu
 #***********************************************************************
+# This script downloads and sets up ROS2 drivers for MuSoHu sensors:
+# - Audio: audio_common, respeaker_ros
+# - LiDAR: RoboSense rslidar_sdk, rslidar_msg (Helios 32)
+# - IMU: Witmotion witmotion_ros2
+# - Camera: ZED ROS2 wrapper
+# It also configures LiDAR settings and installs Python dependencies
+#***********************************************************************
 
+#***********************************************************************
+# Help function
+#***********************************************************************
 
-# Source logging configuration
+show_help() {
+    cat << EOF
+Usage: bash download_driver_ros2.sh [OPTIONS]
+
+Download and configure ROS2 drivers for MuSoHu sensors.
+
+This script:
+  - Creates workspace at ~/ros2_musohu_ws/src
+  - Downloads audio drivers (audio_common, respeaker_ros)
+  - Downloads LiDAR drivers (rslidar_sdk, rslidar_msg)
+  - Downloads IMU driver (witmotion_ros2)
+  - Downloads ZED camera wrapper (zed-ros2-wrapper)
+  - Configures LiDAR type to RSHELIOS (Helios 32)
+  - Installs Python dependencies for ReSpeaker
+
+Workspace Location:
+  ~/ros2_musohu_ws/src
+
+Packages Downloaded:
+  Audio:
+    - audio_common (ROS2 branch)
+    - respeaker_ros
+  LiDAR:
+    - rslidar_sdk (with submodules)
+    - rslidar_msg
+  IMU:
+    - witmotion_ros2
+  Camera:
+    - zed-ros2-wrapper (recursive clone)
+
+System Dependencies Installed:
+  - portaudio19-dev
+  - libasound2-dev
+  - libsndfile1-dev
+  - python3-venv
+  - ros-humble-tf-transformations
+
+Python Packages:
+  - pyusb, click, pyaudio, pixel-ring
+  - transforms3d
+
+Options:
+  -h, --help     Display this help message and exit
+
+Examples:
+  bash download_driver_ros2.sh
+  bash download_driver_ros2.sh --help
+
+Next Steps:
+  1. Build workspace: cd ~/ros2_musohu_ws && colcon build
+  2. Source workspace: source ~/ros2_musohu_ws/install/setup.bash
+  3. Launch sensors: ros2 launch helmet_bringup helmet_sensors.launch.py
+
+Note: If packages already exist, they will be skipped.
+      Use 'git pull' in each package directory to update.
+
+EOF
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# Get script directory and source utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../utils/logging_config.sh"
 log_info "Starting driver download process..."

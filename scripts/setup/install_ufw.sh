@@ -1,15 +1,94 @@
 #!/bin/bash
 
 #***********************************************************************
-# Script to install and configure UFW firewall with automatic restart
+# UFW Firewall Installation and Configuration Script
+#***********************************************************************
+# This script installs and configures UFW (Uncomplicated Firewall)
+# It sets up firewall rules for SSH, VNC, HTTP/HTTPS access
+# and configures automatic restart on failure
 #***********************************************************************
 
-# Source logging configuration
+#***********************************************************************
+# Help function
+#***********************************************************************
+
+show_help() {
+    cat << EOF
+Usage: sudo bash install_ufw.sh [OPTIONS]
+
+Install and configure UFW firewall with automatic restart.
+
+This script:
+  - Installs UFW (Uncomplicated Firewall)
+  - Sets default policies (deny incoming, allow outgoing)
+  - Allows SSH (port 22)
+  - Allows VNC (port 5901)
+  - Allows HTTP (port 80) and HTTPS (port 443)
+  - Configures UFW to restart automatically on failure
+  - Enables UFW to start on boot
+
+Firewall Rules Configured:
+  Port 22 (TCP):   SSH access
+  Port 5901 (TCP): VNC server
+  Port 80 (TCP):   HTTP
+  Port 443 (TCP):  HTTPS
+
+Default Policies:
+  Incoming: Deny (except allowed ports)
+  Outgoing: Allow (all traffic)
+
+Service Configuration:
+  - Auto-restart on failure
+  - Restart delay: 5 seconds
+  - Start limit: 3 attempts in 60 seconds
+
+Options:
+  -h, --help     Display this help message and exit
+
+Examples:
+  sudo bash install_ufw.sh
+  sudo bash install_ufw.sh --help
+
+Useful UFW Commands:
+  Check status:        sudo ufw status verbose
+  Check service:       sudo systemctl status ufw
+  Add rule:            sudo ufw allow <port>/tcp
+  Delete rule:         sudo ufw delete allow <port>/tcp
+  Reload firewall:     sudo ufw reload
+  Disable firewall:    sudo ufw disable
+  Enable firewall:     sudo ufw enable
+
+Note: This script requires root privileges.
+
+EOF
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# Get script directory and source utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../utils/logging_config.sh"
 
 log_info "Installing and configuring UFW firewall..."
-log_info "-----------------------------------------------"
+log_separator
+
+#***********************************************************************
+# Update package lists and install UFW
+#***********************************************************************
 
 log_info "Updating package lists..."
 sudo apt update
@@ -23,6 +102,10 @@ else
     log_error "Failed to install UFW"
     exit 1
 fi
+
+#***********************************************************************
+# Configure UFW rules
+#***********************************************************************
 
 log_info "Configuring UFW rules..."
 log_info "Setting default policies (deny incoming, allow outgoing)..."
@@ -40,6 +123,10 @@ sudo ufw allow http
 sudo ufw allow https
 
 log_success "UFW rules configured"
+
+#***********************************************************************
+# Configure UFW service for auto-restart
+#***********************************************************************
 
 log_info "Creating UFW service override for auto-restart..."
 sudo mkdir -p /etc/systemd/system/ufw.service.d
@@ -69,6 +156,10 @@ else
     exit 1
 fi
 
+#***********************************************************************
+# Enable and start UFW service
+#***********************************************************************
+
 log_info "Reloading systemd daemon..."
 sudo systemctl daemon-reload
 
@@ -88,10 +179,18 @@ else
     exit 1
 fi
 
+#***********************************************************************
+# Display UFW status
+#***********************************************************************
+
 log_separator
 log_info "UFW Status:"
 sudo ufw status verbose
 log_separator
+
+#***********************************************************************
+# Installation complete
+#***********************************************************************
 
 log_separator
 log_success "UFW setup complete!"

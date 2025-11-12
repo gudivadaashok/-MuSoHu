@@ -17,9 +17,9 @@ RULES_SOURCE_DIR="$SCRIPT_DIR/rules"
 #######################################################################
 # Source the logging configuration from the scripts/utils directory
 # This uses $SCRIPT_DIR to navigate to the correct logging_config.sh file
-# The path goes up one level (../) from udev_rules to reach scripts/utils
+# The path goes up one level (../) from scripts/udev_rules to reach scripts/utils
 #######################################################################
-source "$SCRIPT_DIR/../scripts/utils/logging_config.sh"
+source "$SCRIPT_DIR/../utils/logging_config.sh"
 
 log_debug "Script directory: $SCRIPT_DIR"
 log_info "Setting up udev rules for MuSoHu devices..."

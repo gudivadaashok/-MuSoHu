@@ -5,7 +5,85 @@
 #***********************************************************************
 # This script installs the ZED SDK and its dependencies
 # It automatically detects the system configuration or uses environment variables
+# Designed for JetPack 6.1/6.2 (L4T 36.4) with CUDA 12.6
 #***********************************************************************
+
+#***********************************************************************
+# Help function
+#***********************************************************************
+
+show_help() {
+    cat << EOF
+Usage: sudo bash install_zed_sdk.sh [OPTIONS]
+
+Install ZED SDK for Jetson devices with JetPack 6.1/6.2.
+
+This script:
+  - Installs ZED SDK dependencies
+  - Runs Python packages installation script
+  - Downloads ZED SDK 5.1 for JetPack 6.1/6.2 (L4T 36.4)
+  - Installs SDK in runtime-only mode with CUDA skipped
+  - Cleans up temporary files
+
+ZED SDK Version:
+  Version: 5.1
+  Target:  JetPack 6.1 and 6.2 (L4T 36.4)
+  Platform: Jetson Orin
+  CUDA:    12.6
+  URL:     https://www.stereolabs.com/developers/release/
+
+Installation Mode:
+  - Runtime only (no samples/tools)
+  - CUDA skipped (uses existing CUDA installation)
+
+Dependencies Installed:
+  System packages:
+    - lsb-release, wget, less, zstd
+    - udev, sudo
+    - libpng-dev, libgomp1
+  Python packages:
+    - Installed via install_python_packages.sh
+
+Options:
+  -h, --help     Display this help message and exit
+
+Examples:
+  sudo bash install_zed_sdk.sh
+  sudo bash install_zed_sdk.sh --help
+
+Post-Installation:
+  1. Reboot system or reconnect USB devices
+  2. Add user to necessary groups
+  3. Check camera permissions: ls -l /dev/video*
+  4. Test with ZED SDK tools
+
+Troubleshooting:
+  - Check ZED SDK documentation: https://www.stereolabs.com/docs/
+  - Verify JetPack version: sudo apt-cache show nvidia-jetpack
+  - Check CUDA version: nvcc --version
+
+Note: This script requires root privileges.
+      For other JetPack versions, visit:
+      https://www.stereolabs.com/developers/release/
+
+EOF
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+    shift
+done
 
 # Get script directory and source utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

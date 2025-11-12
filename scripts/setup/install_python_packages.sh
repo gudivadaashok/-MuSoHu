@@ -7,6 +7,70 @@
 # It handles both system packages and user-level pip installations safely
 #***********************************************************************
 
+#***********************************************************************
+# Help function
+#***********************************************************************
+
+show_help() {
+    cat << EOF
+Usage: sudo bash install_python_packages.sh [OPTIONS]
+
+Install Python and essential packages for ZED SDK and development.
+
+This script:
+  - Installs Python 3 and pip
+  - Installs development tools (python3-dev, setuptools, wheel)
+  - Installs scientific packages (numpy, opencv, matplotlib, scipy)
+  - Verifies package installation
+  - Provides guidance for user-level pip installations
+
+System Packages Installed:
+  Core:
+    - python3, python3-pip, python3-dev
+    - python3-setuptools, python3-wheel
+  Scientific:
+    - python3-numpy
+    - python3-opencv
+    - python3-matplotlib
+    - python3-scipy
+
+Options:
+  -h, --help     Display this help message and exit
+
+Examples:
+  sudo bash install_python_packages.sh
+  sudo bash install_python_packages.sh --help
+
+User-Level Package Installation:
+  For additional packages without sudo:
+    pip install --user <package_name>
+  
+  Examples:
+    pip install --user pandas
+    pip install --user jupyter
+    pip install --user tensorflow
+
+Note: This script requires root privileges for system package installation.
+
+EOF
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+    shift
+done
+
 # Get script directory and source utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../utils/logging_config.sh"

@@ -1,0 +1,318 @@
+#!/bin/bash
+
+################################################################################
+# MuSoHu Production Web Service Setup Script
+#
+# This script configures the MuSoHu web application as a production-ready
+# systemd service with:
+#   - Automatic restart on failure
+#   - Resource limits (CPU, Memory)
+#   - Systemd journal logging
+#   - Auto-start on boot
+#   - Health check endpoint
+#
+# Usage:
+#   sudo bash scripts/setup/setup_production_web_service.sh
+#
+# Requirements:
+#   - Ubuntu/Debian Linux with systemd
+#   - Python 3.8+
+#   - sudo privileges
+################################################################################
+
+set -e  # Exit on any error
+
+# Source logging utilities if available
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOGGING_CONFIG="${SCRIPT_DIR}/../utils/logging_config.sh"
+
+if [[ -f "$LOGGING_CONFIG" ]]; then
+    source "$LOGGING_CONFIG"
+else
+    # Fallback logging functions
+    log_info() { echo "[INFO] $*"; }
+    log_success() { echo "[SUCCESS] $*"; }
+    log_warning() { echo "[WARNING] $*"; }
+    log_error() { echo "[ERROR] $*"; }
+fi
+
+# Configuration
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+WEB_APP_DIR="${PROJECT_ROOT}/web-app"
+VENV_DIR="${WEB_APP_DIR}/venv"
+SERVICE_NAME="musohu-web"
+SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+TEMPLATE_FILE="${SCRIPT_DIR}/musohu-web.service.template"
+
+################################################################################
+# Preflight Checks
+################################################################################
+
+check_requirements() {
+    log_info "Performing preflight checks..."
+
+    # Check if running as root/sudo
+    if [[ $EUID -ne 0 ]]; then
+        log_error "This script must be run with sudo privileges"
+        log_info "Usage: sudo bash $0"
+        exit 1
+    fi
+
+    # Check if systemd is available
+    if ! command -v systemctl &> /dev/null; then
+        log_error "systemd is not available on this system"
+        exit 1
+    fi
+
+    # Check if web app directory exists
+    if [[ ! -d "$WEB_APP_DIR" ]]; then
+        log_error "Web app directory not found: $WEB_APP_DIR"
+        exit 1
+    fi
+
+    # Check if app.py exists
+    if [[ ! -f "$WEB_APP_DIR/app.py" ]]; then
+        log_error "app.py not found in $WEB_APP_DIR"
+        exit 1
+    fi
+
+    # Check if service template exists
+    if [[ ! -f "$TEMPLATE_FILE" ]]; then
+        log_error "Service template not found: $TEMPLATE_FILE"
+        exit 1
+    fi
+
+    log_success "Preflight checks passed"
+}
+
+################################################################################
+# Python Environment Setup
+################################################################################
+
+setup_python_environment() {
+    log_info "Setting up Python virtual environment..."
+
+    # Get the actual user who ran sudo
+    ACTUAL_USER="${SUDO_USER:-$USER}"
+    ACTUAL_GROUP=$(id -gn "$ACTUAL_USER")
+
+    cd "$WEB_APP_DIR"
+
+    # Create virtual environment if it doesn't exist
+    if [[ ! -d "$VENV_DIR" ]]; then
+        log_info "Creating virtual environment..."
+        sudo -u "$ACTUAL_USER" python3 -m venv venv
+    else
+        log_info "Virtual environment already exists"
+    fi
+
+    # Activate and upgrade pip
+    log_info "Upgrading pip..."
+    sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && pip install --upgrade pip"
+
+    # Install requirements
+    if [[ -f "requirements.txt" ]]; then
+        log_info "Installing Python dependencies..."
+        sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && pip install -r requirements.txt"
+    else
+        log_warning "requirements.txt not found"
+    fi
+
+    # Verify waitress is installed
+    if sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && python -c 'import waitress' 2>/dev/null"; then
+        log_success "Waitress WSGI server is installed"
+    else
+        log_warning "Waitress not found, installing..."
+        sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && pip install waitress"
+    fi
+
+    log_success "Python environment ready"
+}
+
+################################################################################
+# Service Configuration
+################################################################################
+
+create_service_file() {
+    log_info "Creating systemd service file..."
+
+    # Get the actual user who ran sudo
+    ACTUAL_USER="${SUDO_USER:-$USER}"
+    ACTUAL_GROUP=$(id -gn "$ACTUAL_USER")
+
+    # Read template and replace placeholders
+    sed -e "s|USER_PLACEHOLDER|${ACTUAL_USER}|g" \
+        -e "s|WEB_APP_DIR_PLACEHOLDER|${WEB_APP_DIR}|g" \
+        "$TEMPLATE_FILE" > "$SERVICE_FILE"
+
+    # Set proper permissions
+    chmod 644 "$SERVICE_FILE"
+
+    log_success "Service file created: $SERVICE_FILE"
+}
+
+################################################################################
+# Service Installation
+################################################################################
+
+install_service() {
+    log_info "Installing systemd service..."
+
+    # Stop service if it's already running
+    if systemctl is-active --quiet "$SERVICE_NAME"; then
+        log_info "Stopping existing service..."
+        systemctl stop "$SERVICE_NAME"
+    fi
+
+    # Reload systemd daemon
+    log_info "Reloading systemd daemon..."
+    systemctl daemon-reload
+
+    # Enable service to start on boot
+    log_info "Enabling service to start on boot..."
+    systemctl enable "$SERVICE_NAME"
+
+    # Start the service
+    log_info "Starting service..."
+    systemctl start "$SERVICE_NAME"
+
+    # Wait a moment for service to start
+    sleep 2
+
+    # Check service status
+    if systemctl is-active --quiet "$SERVICE_NAME"; then
+        log_success "Service is running!"
+    else
+        log_error "Service failed to start"
+        log_info "Check status with: sudo systemctl status $SERVICE_NAME"
+        log_info "Check logs with: sudo journalctl -u $SERVICE_NAME -n 50"
+        exit 1
+    fi
+}
+
+################################################################################
+# Firewall Configuration (Optional)
+################################################################################
+
+configure_firewall() {
+    log_info "Checking firewall configuration..."
+
+    if command -v ufw &> /dev/null; then
+        if ufw status | grep -q "Status: active"; then
+            log_info "UFW is active, checking port 5001..."
+            
+            # Check if port is already allowed
+            if ! ufw status | grep -q "5001"; then
+                log_info "Opening port 5001..."
+                ufw allow 5001/tcp comment "MuSoHu Web Service"
+                log_success "Port 5001 opened in firewall"
+            else
+                log_info "Port 5001 is already open"
+            fi
+        else
+            log_info "UFW is not active"
+        fi
+    else
+        log_info "UFW not installed, skipping firewall configuration"
+    fi
+}
+
+################################################################################
+# Verification
+################################################################################
+
+verify_installation() {
+    log_info "Verifying installation..."
+
+    echo ""
+    echo "=========================================="
+    echo "Service Status:"
+    echo "=========================================="
+    systemctl status "$SERVICE_NAME" --no-pager | head -n 15
+    echo ""
+
+    # Check if service is listening on port
+    log_info "Checking if service is listening on port 5001..."
+    sleep 1
+    
+    if command -v ss &> /dev/null; then
+        if ss -tuln | grep -q ":5001"; then
+            log_success "Service is listening on port 5001"
+        else
+            log_warning "Port 5001 not found in listening ports"
+        fi
+    fi
+
+    # Try to access health endpoint
+    if command -v curl &> /dev/null; then
+        log_info "Testing health endpoint..."
+        if curl -s http://localhost:5001/health > /dev/null; then
+            log_success "Health endpoint responding"
+        else
+            log_warning "Health endpoint not responding yet"
+        fi
+    fi
+}
+
+################################################################################
+# Display Usage Information
+################################################################################
+
+display_usage_info() {
+    echo ""
+    echo "=========================================="
+    echo "MuSoHu Web Service - Management Commands"
+    echo "=========================================="
+    echo ""
+    echo "Service Control:"
+    echo "  Start:    sudo systemctl start $SERVICE_NAME"
+    echo "  Stop:     sudo systemctl stop $SERVICE_NAME"
+    echo "  Restart:  sudo systemctl restart $SERVICE_NAME"
+    echo "  Status:   sudo systemctl status $SERVICE_NAME"
+    echo ""
+    echo "Logs:"
+    echo "  View:     sudo journalctl -u $SERVICE_NAME"
+    echo "  Follow:   sudo journalctl -u $SERVICE_NAME -f"
+    echo "  Recent:   sudo journalctl -u $SERVICE_NAME -n 50"
+    echo ""
+    echo "Monitoring:"
+    echo "  Health:   curl http://localhost:5001/health"
+    echo "  Restarts: sudo systemctl show $SERVICE_NAME -p NRestarts"
+    echo ""
+    echo "Boot Configuration:"
+    echo "  Enable:   sudo systemctl enable $SERVICE_NAME"
+    echo "  Disable:  sudo systemctl disable $SERVICE_NAME"
+    echo ""
+    echo "Web Interface:"
+    echo "  Local:    http://localhost:5001"
+    echo "  Network:  http://$(hostname -I | awk '{print $1}'):5001"
+    echo ""
+    echo "Configuration File: $SERVICE_FILE"
+    echo "=========================================="
+}
+
+################################################################################
+# Main Execution
+################################################################################
+
+main() {
+    echo "=========================================="
+    echo "MuSoHu Production Web Service Setup"
+    echo "=========================================="
+    echo ""
+
+    check_requirements
+    setup_python_environment
+    create_service_file
+    install_service
+    configure_firewall
+    verify_installation
+    display_usage_info
+
+    echo ""
+    log_success "Production web service setup completed successfully!"
+    echo ""
+}
+
+# Run main function
+main "$@"

@@ -5,9 +5,95 @@
 #***********************************************************************
 # If the IMU is connected but /dev/ttyUSB0 doesn't appear, the 
 # CH340/CH341 USB-to-serial driver may be missing from the Jetson kernel.
+# This script detects, compiles, and installs the CH340 driver from source
 #***********************************************************************
 
-# Source logging configuration
+#***********************************************************************
+# Help function
+#***********************************************************************
+
+show_help() {
+    cat << EOF
+Usage: bash troubleshoot_ch340_driver.sh [OPTIONS]
+
+Troubleshoot and install CH340/CH341 USB-to-serial driver.
+
+This script:
+  - Detects CH340 device (1a86:7523)
+  - Checks for /dev/ttyUSB* devices
+  - Attempts to load existing ch341 module
+  - If not found, downloads and compiles driver from source
+  - Installs driver permanently (survives reboots)
+  - Verifies device availability
+
+CH340/CH341 Device:
+  Vendor ID:  1a86
+  Product ID: 7523
+  Chip:       QinHeng Electronics CH340/CH341
+  Used by:    Witmotion IMU and other USB-serial devices
+
+Expected Devices:
+  /dev/ttyUSB0, /dev/ttyUSB1, etc.
+  or
+  /dev/ttyACM0, /dev/ttyACM1, etc.
+
+Driver Source:
+  Repository: https://github.com/juliagoda/CH341SER.git
+  Compilation: make
+  Installation: make load && make install
+
+Options:
+  -h, --help     Display this help message and exit
+
+Examples:
+  bash troubleshoot_ch340_driver.sh
+  bash troubleshoot_ch340_driver.sh --help
+
+Troubleshooting Steps:
+  1. Check if CH340 detected: lsusb | grep 1a86:7523
+  2. Check if module loaded: lsmod | grep ch34x
+  3. Check devices: ls /dev/ttyUSB* /dev/ttyACM*
+  4. View kernel messages: dmesg | grep -i ch34
+  5. Trigger udev: sudo udevadm trigger
+  6. Reload udev rules: sudo udevadm control --reload-rules
+
+Manual Commands:
+  Load module:     sudo modprobe ch341
+  Remove module:   sudo rmmod ch34x
+  Manual load:     sudo insmod /tmp/CH341SER/ch34x.ko
+  Check status:    lsmod | grep ch34x
+
+Prerequisites:
+  - build-essential (for compiling)
+  - git (for cloning repository)
+  - sudo privileges (for module installation)
+
+Note: If device still doesn't work:
+      - Try a different USB port
+      - Check cable connection
+      - Verify device on another computer
+      - Check if device is in use by another process
+
+EOF
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# Get script directory and source utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../utils/logging_config.sh"
 

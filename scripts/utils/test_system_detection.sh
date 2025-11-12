@@ -28,8 +28,6 @@
 #   ./test_system_detection.sh --debug
 #   ./test_system_detection.sh --verbose --export
 #
-# Author: MuSoHu Team
-# Date: November 2025
 #***********************************************************************
 
 #***********************************************************************

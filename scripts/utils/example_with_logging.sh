@@ -30,8 +30,7 @@
 #   ./example_with_logging.sh --debug
 #   ./example_with_logging.sh --debug --skip-sleep
 #
-# Author: MuSoHu Team
-# Date: November 2025
+#
 #***********************************************************************
 
 #***********************************************************************

@@ -5,9 +5,101 @@
 #***********************************************************************
 # This script sets up a Flask web service to manage and execute
 # MuSoHu setup scripts (download drivers, configure devices, etc.)
+# It creates a virtual environment and installs all dependencies
 #***********************************************************************
 
-# Source logging configuration
+#***********************************************************************
+# Help function
+#***********************************************************************
+
+show_help() {
+    cat << EOF
+Usage: bash setup_web_service.sh [OPTIONS]
+
+Setup Flask web service for MuSoHu script management.
+
+This script:
+  - Checks Python 3 and pip installation
+  - Creates Python virtual environment in web-app/venv
+  - Installs Flask and dependencies from requirements.txt
+  - Creates necessary directories (instance, logs, uploads)
+  - Generates systemd service file
+  - Creates startup script
+
+Web Service Features:
+  - Web interface for script management
+  - Execute setup scripts remotely
+  - View system information and logs
+  - Monitor disk space and services
+
+Directory Structure Created:
+  web-app/
+    ├── venv/              (Python virtual environment)
+    ├── instance/          (Application instance data)
+    ├── logs/              (Application logs)
+    ├── uploads/           (File uploads)
+    └── start_web_service.sh (Startup script)
+
+Service Configuration:
+  Port:        80 (requires sudo to run)
+  Host:        0.0.0.0 (accessible from network)
+  Auto-restart: Yes (when running as systemd service)
+
+Options:
+  -h, --help     Display this help message and exit
+
+Examples:
+  bash setup_web_service.sh
+  bash setup_web_service.sh --help
+
+Starting the Web Service:
+  Manual start:
+    sudo bash web-app/start_web_service.sh
+  
+  As systemd service:
+    sudo cp /tmp/musohu-web.service /etc/systemd/system/
+    sudo systemctl daemon-reload
+    sudo systemctl enable musohu-web
+    sudo systemctl start musohu-web
+
+Accessing the Web Service:
+  - Local: http://localhost
+  - Network: http://<device-ip>
+  - Hotspot: http://robotixx or http://10.42.0.1
+
+Managing the Service:
+  Status:  sudo systemctl status musohu-web
+  Logs:    sudo journalctl -u musohu-web -f
+  Stop:    sudo systemctl stop musohu-web
+  Restart: sudo systemctl restart musohu-web
+
+Prerequisites:
+  - Python 3 installed
+  - pip3 installed
+  - Network access for package downloads
+
+Note: Port 80 requires root/sudo privileges to run.
+
+EOF
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# Get script directory and source utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../utils/logging_config.sh"
 
