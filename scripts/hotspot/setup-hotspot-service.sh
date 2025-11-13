@@ -65,6 +65,7 @@ done
 
 # Get script directory and source utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+Service_Service_File="$SCRIPT_DIR/hotspot.service"
 source "$(dirname "$SCRIPT_DIR")/utils/logging_config.sh"
 
 log_info "Starting hotspot service setup..."
@@ -76,7 +77,7 @@ log_separator
 
 # Copy service file to systemd directory
 log_info "Installing hotspot systemd service..."
-sudo cp "$SCRIPT_DIR/hotspot.service" /etc/systemd/system/
+sudo cp "$Service_Service_File" /etc/systemd/system/
 
 if [ $? -eq 0 ]; then
     log_success "Service file copied to /etc/systemd/system/"

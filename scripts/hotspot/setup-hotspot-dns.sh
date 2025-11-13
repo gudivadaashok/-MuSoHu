@@ -92,7 +92,7 @@ if ! command -v dnsmasq &> /dev/null; then
     log_info "Installing dnsmasq..."
     sudo apt-get update
     sudo apt-get install -y dnsmasq
-    
+
     if [ $? -eq 0 ]; then
         log_success "dnsmasq installed successfully"
     else
