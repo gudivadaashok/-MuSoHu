@@ -184,22 +184,47 @@ async def list_scripts():
 async def get_disk_space():
     """Get disk space information"""
     try:
-        total, used, free = shutil.disk_usage('/')
-
-        # Convert bytes to GB
-        total_gb = total / (1024 ** 3)
-        used_gb = used / (1024 ** 3)
-        free_gb = free / (1024 ** 3)
-
-        disk_info = {
-            'total': f'{total_gb:.2f} GB',
-            'used': f'{used_gb:.2f} GB',
-            'free': f'{free_gb:.2f} GB',
-            'percent_used': f'{(used / total) * 100:.1f}%'
-        }
-
-        return JSONResponse(content=disk_info)
+        # Use df command to get accurate disk usage (matches df -h output)
+        # This accounts for filesystem overhead and reserved blocks
+        result = subprocess.run(
+            ['df', '-h', '/'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        # Parse df output
+        # Output format: Filesystem Size Used Avail Use% Mounted
+        lines = result.stdout.strip().split('\n')
+        if len(lines) < 2:
+            raise Exception("Unexpected df output format")
+        
+        # Get the data line (skip header)
+        data_line = lines[1].split()
+        
+        # Extract values (handling different df output formats)
+        if len(data_line) >= 5:
+            total = data_line[1]      # Size
+            used = data_line[2]       # Used
+            free = data_line[3]       # Available
+            percent_used = data_line[4]  # Use%
+            
+            disk_info = {
+                'total': total,
+                'used': used,
+                'free': free,
+                'percent_used': percent_used
+            }
+            
+            return JSONResponse(content=disk_info)
+        else:
+            raise Exception("Could not parse df output")
+            
+    except subprocess.CalledProcessError as e:
+        logger.error(f"df command failed: {e}")
+        return JSONResponse(content={'error': 'Failed to get disk space information'}, status_code=500)
     except Exception as e:
+        logger.error(f"Error getting disk space: {e}")
         return JSONResponse(content={'error': str(e)}, status_code=500)
 
 @app.get("/api/logs")
