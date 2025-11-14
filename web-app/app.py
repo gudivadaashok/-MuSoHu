@@ -636,6 +636,7 @@ async def stream_file(
 # ============================================================================
 # API Routes - Scripts
 # ============================================================================
+@app.post("/api/scripts/{script_id}/start")
 async def start_script(script_id: str):
     """Start a ROS2 script"""
     logger.info(f'Attempting to start script: {script_id}')
