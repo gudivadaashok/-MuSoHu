@@ -87,6 +87,20 @@ check_requirements() {
         exit 1
     fi
 
+    # Check if python3-venv is installed
+    if ! dpkg -l | grep -q python3-venv 2>/dev/null; then
+        log_warning "python3-venv package not found, installing..."
+        if command -v apt &> /dev/null; then
+            apt update
+            apt install -y python3-venv
+            log_success "python3-venv installed successfully"
+        else
+            log_error "apt package manager not found. Please install python3-venv manually"
+            log_info "Run: sudo apt install python3-venv"
+            exit 1
+        fi
+    fi
+
     log_success "Preflight checks passed"
 }
 
