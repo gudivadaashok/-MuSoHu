@@ -493,13 +493,13 @@ async def list_files():
     """
     try:
         files_by_dir = file_discovery.get_files_by_directory()
-        
+
         # Convert to response format
         response = {}
         for dir_key, files in files_by_dir.items():
             # Get directory description from first file
             dir_description = files[0].dir_description if files else dir_key
-            
+
             response[dir_key] = {
                 'description': dir_description,
                 'files': [
@@ -510,6 +510,32 @@ async def list_files():
                     for file in files
                 ]
             }
+
+        # Add virtual entries for journalctl sources so they appear in the UI
+        log_dirs = config.get('log_dirs', [])
+        for entry in log_dirs:
+            if entry.get('type') == 'journalctl':
+                dir_key = entry.get('key', 'system')
+                dir_description = entry.get('description', 'Systemd Journal Logs')
+                if dir_key not in response:
+                    response[dir_key] = {
+                        'description': dir_description,
+                        'files': []
+                    }
+                # Add a pseudo-file representing journalctl output
+                response[dir_key]['files'].append({
+                    'id': f"{dir_key}/journalctl",
+                    'name': 'journalctl',
+                    'path': 'journalctl',
+                    'dir_key': dir_key,
+                    'dir_description': dir_description,
+                    'size': 0,
+                    'size_human': 'stream',
+                    'modified_time': None,
+                    'modified_time_human': None,
+                    'exists': True,
+                    'extension': '.log'
+                })
         
         return JSONResponse(content=response)
     except Exception as e:
@@ -534,6 +560,40 @@ async def get_file(
     - search: Optional search term to filter results
     """
     try:
+        # Handle virtual journalctl files: <dir_key>/journalctl
+        try:
+            dir_key, file_name = file_id.split('/', 1)
+        except ValueError:
+            dir_key, file_name = None, None
+
+        if file_name == 'journalctl':
+            # Determine default lines
+            default_lines = config.get('server', {}).get('default_lines', 500)
+            n = default_lines if lines is None else (lines if lines > 0 else default_lines)
+            # Build journalctl command (tail or head equivalent by limiting lines)
+            cmd = ['journalctl', '--no-pager', '--output=short-iso', '-n', str(n)]
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                raw_lines = result.stdout.splitlines()
+                if not tail and len(raw_lines) > n:
+                    raw_lines = raw_lines[:n]
+                return JSONResponse(content={
+                    'file_id': file_id,
+                    'metadata': {
+                        'name': 'journalctl',
+                        'path': 'journalctl',
+                        'dir_key': dir_key or 'system',
+                        'dir_description': 'Systemd Journal Logs',
+                        'size_human': 'stream',
+                        'exists': True
+                    },
+                    'lines': raw_lines,
+                    'total_lines': len(raw_lines)
+                })
+            except Exception as e:
+                logger.error(f'Failed to read journalctl: {e}')
+                return JSONResponse(content={'error': f'Failed to read journalctl: {str(e)}'}, status_code=500)
+
         # If search is provided, use search functionality
         if search:
             search_config = config.get('log_viewer', {}).get('search', {})
@@ -584,6 +644,9 @@ async def download_file(
 ):
     """Download a log file"""
     try:
+        # Block downloads for journalctl virtual file
+        if file_id.endswith('/journalctl'):
+            return JSONResponse(content={'error': 'Download not supported for journalctl stream'}, status_code=400)
         metadata = file_discovery.get_file_by_id(file_id)
         
         if not metadata:
@@ -618,6 +681,9 @@ async def stream_file(
     Returns file as a streaming response
     """
     try:
+        # Block streaming for journalctl virtual file (use get_file instead)
+        if file_id.endswith('/journalctl'):
+            return JSONResponse(content={'error': 'Use /api/file for journalctl content'}, status_code=400)
         metadata = file_discovery.get_file_by_id(file_id)
         
         if not metadata or not metadata.exists:

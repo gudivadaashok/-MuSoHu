@@ -51,9 +51,8 @@ log_viewer:
   max_lines: 500  # Maximum number of log lines to display
   cache_ttl: 30  # Cache file list for 30 seconds to reduce I/O
   allowed_extensions:
-    - .log
-    - .txt
-  # Directories to scan for log files (Option A: file-based discovery)
+    - .log  # Restrict to .log to avoid listing non-log text files (e.g., requirements.txt)
+  # Directories to scan for log files automatically
   scan_directories:
     - enabled: true
       path: /home/jetson/.ros/log/
