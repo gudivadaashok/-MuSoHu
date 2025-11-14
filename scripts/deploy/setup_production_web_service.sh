@@ -12,7 +12,9 @@
 #   - Health check endpoint
 #
 # Usage:
+# Example usage:
 #   sudo bash scripts/deploy/setup_production_web_service.sh
+#
 #
 # Requirements:
 #   - Ubuntu/Debian Linux with systemd
@@ -43,6 +45,7 @@ VENV_DIR="${WEB_APP_DIR}/venv"
 SERVICE_NAME="musohu-web"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 TEMPLATE_FILE="${SCRIPT_DIR}/templates/musohu-web.service.template"
+SERVICE_PORT="8000"  # Port must be >= 1024 for non-root users
 
 ################################################################################
 # Preflight Checks
@@ -142,8 +145,18 @@ create_service_file() {
 
     # Read template and replace placeholders
     sed -e "s|USER_PLACEHOLDER|${ACTUAL_USER}|g" \
+        -e "s|GROUP_PLACEHOLDER|${ACTUAL_GROUP}|g" \
         -e "s|WEB_APP_DIR_PLACEHOLDER|${WEB_APP_DIR}|g" \
+        -e "s|PORT_PLACEHOLDER|${SERVICE_PORT}|g" \
         "$TEMPLATE_FILE" > "$SERVICE_FILE"
+
+    # Validate that all placeholders were replaced
+    if grep -q "PLACEHOLDER" "$SERVICE_FILE"; then
+        log_error "Failed to replace all placeholders in service file"
+        cat "$SERVICE_FILE" | grep "PLACEHOLDER"
+        rm "$SERVICE_FILE"
+        exit 1
+    fi
 
     # Set proper permissions
     chmod 644 "$SERVICE_FILE"
@@ -176,18 +189,24 @@ install_service() {
     log_info "Starting service..."
     systemctl start "$SERVICE_NAME"
 
-    # Wait a moment for service to start
-    sleep 2
+    # Wait for service to start (up to 30 seconds)
+    log_info "Waiting for service to start..."
+    local wait_count=0
+    local max_wait=30
+    while [[ $wait_count -lt $max_wait ]]; do
+        if systemctl is-active --quiet "$SERVICE_NAME"; then
+            log_success "Service is running!"
+            return 0
+        fi
+        sleep 1
+        ((wait_count++))
+    done
 
-    # Check service status
-    if systemctl is-active --quiet "$SERVICE_NAME"; then
-        log_success "Service is running!"
-    else
-        log_error "Service failed to start"
-        log_info "Check status with: sudo systemctl status $SERVICE_NAME"
-        log_info "Check logs with: sudo journalctl -u $SERVICE_NAME -n 50"
-        exit 1
-    fi
+    # Service failed to start
+    log_error "Service failed to start within ${max_wait} seconds"
+    log_info "Check status with: sudo systemctl status $SERVICE_NAME"
+    log_info "Check logs with: sudo journalctl -u $SERVICE_NAME -n 50"
+    exit 1
 }
 
 ################################################################################
@@ -199,15 +218,15 @@ configure_firewall() {
 
     if command -v ufw &> /dev/null; then
         if ufw status | grep -q "Status: active"; then
-            log_info "UFW is active, checking port 80..."
+            log_info "UFW is active, checking port ${SERVICE_PORT}..."
             
-            # Check if port is already allowed
-            if ! ufw status | grep -q "80/tcp"; then
-                log_info "Opening port 80..."
-                ufw allow 80/tcp comment "MuSoHu Web Service"
-                log_success "Port 80 opened in firewall"
+            # Check if port is already allowed (match both port number and port/tcp formats)
+            if ! ufw status | grep -qE "${SERVICE_PORT}(/tcp)?"; then
+                log_info "Opening port ${SERVICE_PORT}..."
+                ufw allow ${SERVICE_PORT}/tcp comment "MuSoHu Web Service"
+                log_success "Port ${SERVICE_PORT} opened in firewall"
             else
-                log_info "Port 80 is already open"
+                log_info "Port ${SERVICE_PORT} is already open"
             fi
         else
             log_info "UFW is not active"
@@ -232,24 +251,26 @@ verify_installation() {
     echo ""
 
     # Check if service is listening on port
-    log_info "Checking if service is listening on port 80..."
-    sleep 1
+    log_info "Checking if service is listening on port ${SERVICE_PORT}..."
+    sleep 2
     
     if command -v ss &> /dev/null; then
-        if ss -tuln | grep -q ":80"; then
-            log_success "Service is listening on port 80"
+        if ss -tuln | grep -q ":${SERVICE_PORT}"; then
+            log_success "Service is listening on port ${SERVICE_PORT}"
         else
-            log_warning "Port 80 not found in listening ports"
+            log_warning "Port ${SERVICE_PORT} not found in listening ports"
+            log_info "This may be normal if the service is still starting up"
         fi
     fi
 
     # Try to access health endpoint
     if command -v curl &> /dev/null; then
         log_info "Testing health endpoint..."
-        if curl -s http://localhost:80/api/health > /dev/null; then
+        if curl -s "http://localhost:${SERVICE_PORT}/api/health" > /dev/null; then
             log_success "Health endpoint responding"
         else
             log_warning "Health endpoint not responding yet"
+            log_info "The service may need a few more seconds to fully start"
         fi
     fi
 }
@@ -276,7 +297,7 @@ display_usage_info() {
     echo "  Recent:   sudo journalctl -u $SERVICE_NAME -n 50"
     echo ""
     echo "Monitoring:"
-    echo "  Health:   curl http://localhost/api/health"
+    echo "  Health:   curl http://localhost:${SERVICE_PORT}/api/health"
     echo "  Restarts: sudo systemctl show $SERVICE_NAME -p NRestarts"
     echo ""
     echo "Boot Configuration:"
@@ -284,10 +305,13 @@ display_usage_info() {
     echo "  Disable:  sudo systemctl disable $SERVICE_NAME"
     echo ""
     echo "Web Interface:"
-    echo "  Local:    http://localhost"
-    echo "  Network:  http://$(hostname -I | awk '{print $1}')"
+    echo "  Local:    http://localhost:${SERVICE_PORT}"
+    echo "  Network:  http://$(hostname -I | awk '{print $1}'):${SERVICE_PORT}"
     echo ""
     echo "Configuration File: $SERVICE_FILE"
+    echo ""
+    echo "NOTE: Service runs on port ${SERVICE_PORT} (non-privileged port)"
+    echo "      For port 80 access, configure a reverse proxy (nginx/Apache)"
     echo "=========================================="
 }
 

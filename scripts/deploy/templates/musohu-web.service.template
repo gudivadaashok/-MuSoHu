@@ -8,13 +8,13 @@ StartLimitIntervalSec=0
 [Service]
 Type=simple
 User=USER_PLACEHOLDER
-Group=USER_PLACEHOLDER
+Group=GROUP_PLACEHOLDER
 WorkingDirectory=WEB_APP_DIR_PLACEHOLDER
 Environment="PATH=WEB_APP_DIR_PLACEHOLDER/venv/bin:/usr/local/bin:/usr/bin:/bin"
 Environment="PYTHONUNBUFFERED=1"
 
 # Main process - Run with uvicorn ASGI server
-ExecStart=WEB_APP_DIR_PLACEHOLDER/venv/bin/uvicorn app:app --host 0.0.0.0 --port 80
+ExecStart=WEB_APP_DIR_PLACEHOLDER/venv/bin/uvicorn app:app --host 0.0.0.0 --port PORT_PLACEHOLDER
 
 # Restart Configuration - Always restart on failure
 Restart=always
