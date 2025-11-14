@@ -125,14 +125,19 @@ setup_python_environment() {
         log_info "Virtual environment already exists"
     fi
 
-    # Activate and upgrade pip
+    # Activate and upgrade pip (with quiet flag to reduce output)
     log_info "Upgrading pip..."
-    sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && pip install --upgrade pip"
+    sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && pip install --upgrade pip -q" || {
+        log_warning "Pip upgrade had issues, continuing anyway..."
+    }
 
     # Install requirements
     if [[ -f "requirements.txt" ]]; then
-        log_info "Installing Python dependencies..."
-        sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && pip install -r requirements.txt"
+        log_info "Installing Python dependencies (this may take a few minutes)..."
+        sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && pip install -r requirements.txt -q" || {
+            log_error "Failed to install requirements"
+            exit 1
+        }
     else
         log_warning "requirements.txt not found"
     fi
@@ -142,7 +147,7 @@ setup_python_environment() {
         log_success "Uvicorn ASGI server is installed"
     else
         log_warning "Uvicorn not found, installing..."
-        sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && pip install uvicorn"
+        sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && pip install uvicorn -q"
     fi
 
     log_success "Python environment ready"
