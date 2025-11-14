@@ -12,9 +12,7 @@
 #   - Health check endpoint
 #
 # Usage:
-# Example usage:
 #   sudo bash scripts/deploy/setup_production_web_service.sh
-#
 #
 # Requirements:
 #   - Ubuntu/Debian Linux with systemd
