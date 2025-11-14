@@ -24,9 +24,11 @@
 
 set -e  # Exit on any error
 
+# Save the script directory before sourcing anything (to prevent it from being overwritten)
+SETUP_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Source logging utilities if available
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOGGING_CONFIG="${SCRIPT_DIR}/../utils/logging_config.sh"
+LOGGING_CONFIG="${SETUP_SCRIPT_DIR}/../utils/logging_config.sh"
 
 if [[ -f "$LOGGING_CONFIG" ]]; then
     source "$LOGGING_CONFIG"
@@ -38,13 +40,13 @@ else
     log_error() { echo "[ERROR] $*"; }
 fi
 
-# Configuration
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+# Configuration (use SETUP_SCRIPT_DIR which won't be overwritten by logging_config.sh)
+PROJECT_ROOT="$(cd "${SETUP_SCRIPT_DIR}/../.." && pwd)"
 WEB_APP_DIR="${PROJECT_ROOT}/web-app"
 VENV_DIR="${WEB_APP_DIR}/venv"
 SERVICE_NAME="musohu-web"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
-TEMPLATE_FILE="${SCRIPT_DIR}/templates/musohu-web.service.template"
+TEMPLATE_FILE="${SETUP_SCRIPT_DIR}/templates/musohu-web.service.template"
 SERVICE_PORT="8000"  # Port must be >= 1024 for non-root users
 
 ################################################################################
