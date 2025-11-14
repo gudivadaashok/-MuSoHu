@@ -101,4 +101,4 @@ When adding new scripts:
 5. Update this README and relevant documentation
 
 
-https://cs.gmu.edu/~xiao/xuesu_website_files/RobotiXX_gmu.gif 
+![RobotiXX at GMU] https://cs.gmu.edu/~xiao/xuesu_website_files/RobotiXX_gmu.gif 
