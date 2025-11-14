@@ -99,3 +99,6 @@ When adding new scripts:
 3. Use the logging system from `utils/logging_config.sh`
 4. Place in the appropriate directory based on purpose
 5. Update this README and relevant documentation
+
+
+https://cs.gmu.edu/~xiao/xuesu_website_files/RobotiXX_gmu.gif 
