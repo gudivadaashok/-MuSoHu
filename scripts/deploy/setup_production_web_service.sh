@@ -122,14 +122,7 @@ setup_python_environment() {
         log_info "Creating virtual environment..."
         sudo -u "$ACTUAL_USER" python3 -m venv venv
     else
-        # Check if venv is valid (has activate script)
-        if [[ ! -f "$VENV_DIR/bin/activate" ]]; then
-            log_warning "Virtual environment is corrupted, recreating..."
-            rm -rf "$VENV_DIR"
-            sudo -u "$ACTUAL_USER" python3 -m venv venv
-        else
-            log_info "Virtual environment already exists"
-        fi
+        log_info "Virtual environment already exists"
     fi
 
     # Activate and upgrade pip (with quiet flag to reduce output)
