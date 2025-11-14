@@ -97,14 +97,18 @@ file_discovery = FileDiscoveryService(config)
 # Define available ROS2 scripts
 ROS2_SCRIPTS = {
     'helmet_nodes': {
-        'command': 'ros2 launch helmet_bringup helmet.launch.py',
-        'description': 'Launch Nodes',
+        # Updated command to properly source the ROS2 workspace before launching sensors
+        # Uses bash -c to ensure sourcing takes effect in the same shell invocation
+        'command': 'bash -c "cd /home/jetson/ros2_musohu_ws && source install/setup.bash && ros2 launch helmet_bringup helmet_sensors.launch.py"',
+        'description': 'Launch Helmet Sensors',
         'status': 'stopped',
         'pid': None
     },
-    'rviz2': {
-        'command': 'ros2 run rviz2 rviz2',
-        'description': 'Record ROS Bags',
+    'record_bag': {
+        # Records all ROS2 topics into /home/jetson/helmet_bags
+        # Creates the directory if missing and uses a timestamped bag name
+        'command': 'bash -c "mkdir -p /home/jetson/helmet_bags && cd /home/jetson/ros2_musohu_ws && source install/setup.bash && ros2 bag record -a -o /home/jetson/helmet_bags/helmet_bag_$(date +%Y%m%d_%H%M%S)"',
+        'description': 'Record all ROS2 topics to /home/jetson/helmet_bags',
         'status': 'stopped',
         'pid': None
     }
@@ -635,6 +639,9 @@ async def stream_file(
 async def start_script(script_id: str):
     """Start a ROS2 script"""
     logger.info(f'Attempting to start script: {script_id}')
+    # Backward compatibility: accept old id 'rviz2' and map to new 'record_bag'
+    if script_id == 'rviz2':
+        script_id = 'record_bag'
     
     if script_id not in ROS2_SCRIPTS:
         logger.error(f'Script not found: {script_id}')
@@ -675,6 +682,8 @@ async def start_script(script_id: str):
 @app.post("/api/scripts/{script_id}/stop")
 async def stop_script(script_id: str):
     """Stop a running ROS2 script"""
+    if script_id == 'rviz2':
+        script_id = 'record_bag'
     if script_id not in ROS2_SCRIPTS:
         return JSONResponse(content={'error': 'Invalid script ID'}, status_code=400)
 
