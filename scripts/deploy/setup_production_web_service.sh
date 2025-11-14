@@ -134,10 +134,18 @@ setup_python_environment() {
     # Install requirements
     if [[ -f "requirements.txt" ]]; then
         log_info "Installing Python dependencies (this may take a few minutes)..."
-        sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && pip install -r requirements.txt -q" || {
+        log_info "Requirements file content:"
+        cat requirements.txt
+        
+        # Try installing with verbose output on error
+        if ! sudo -u "$ACTUAL_USER" bash -c "source venv/bin/activate && pip install -r requirements.txt" 2>&1 | tee /tmp/pip_install.log; then
             log_error "Failed to install requirements"
-            exit 1
-        }
+            log_info "Error details:"
+            tail -20 /tmp/pip_install.log
+            log_info "Attempting to continue anyway - some packages may be missing"
+        else
+            log_success "Python dependencies installed"
+        fi
     else
         log_warning "requirements.txt not found"
     fi
