@@ -233,12 +233,7 @@ async def get_disk_space():
 
 @app.get("/api/logs")
 async def get_logs(source: str = Query(default="musohu", alias="source")):
-    try:
-        log_source = source
-        log_viewer_config = config.get('log_viewer', {})
-        max_lines = log_viewer_config.get('max_lines', 100)
-
-        # Build log files mapping by scanning directories for ALL files
+        # ...existing code for file-based logs...
         log_files = {}
         scan_directories = log_viewer_config.get('scan_directories', [])
 
@@ -345,6 +340,47 @@ async def get_logs(source: str = Query(default="musohu", alias="source")):
     except Exception as e:
         logger.error(f'Failed to read logs: {str(e)}')
         return JSONResponse(content={'error': str(e)}, status_code=500)
+    try:
+        log_source = source
+        log_viewer_config = config.get('log_viewer', {})
+        max_lines = log_viewer_config.get('max_lines', 100)
+
+        # Find log_dirs entry for this source
+        log_dirs = config.get('log_dirs', [])
+        log_dir_entry = next((d for d in log_dirs if d.get('key') == log_source), None)
+
+        if log_dir_entry and log_dir_entry.get('type') == 'journalctl':
+            # Fetch systemd journal logs
+            try:
+                # Get last N lines from journalctl
+                result = subprocess.run([
+                    'journalctl', '-n', str(max_lines), '--no-pager', '--output=short-iso'
+                ], capture_output=True, text=True, check=True)
+                lines = result.stdout.strip().split('\n')
+                logs = []
+                for line in lines:
+                    # Example journalctl line: '2025-11-14T10:00:00+00:00 hostname service[pid]: message'
+                    parts = line.split(' ', 2)
+                    if len(parts) == 3:
+                        timestamp, host, rest = parts
+                        logs.append({
+                            'timestamp': timestamp,
+                            'level': 'INFO',
+                            'message': rest
+                        })
+                    else:
+                        logs.append({
+                            'timestamp': '',
+                            'level': 'INFO',
+                            'message': line
+                        })
+                return JSONResponse(content={'logs': logs, 'source': log_source})
+            except Exception as e:
+                logger.error(f'Error reading journalctl logs: {str(e)}')
+                return JSONResponse(content={'logs': [], 'error': f'Error reading journalctl logs: {str(e)}'})
+
+        # ...existing code for file-based logs...
+        # (leave rest of function unchanged)
 
 
 # --------------------- API Routes - Log Management -------------------------

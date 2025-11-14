@@ -40,11 +40,11 @@ log_dirs:
     path: logs/
     description: "Web Application Logs"
   - key: ros2
-    path: ../helmet_logs/
+    path: /home/jetson/.ros/log/
     description: "ROS2 Helmet Logs"
   - key: system
-    path: ../logs/
-    description: "System Logs"
+    type: journalctl
+    description: "Systemd Journal Logs"
 
 # Log viewer settings
 log_viewer:
@@ -53,6 +53,12 @@ log_viewer:
   allowed_extensions:
     - .log
     - .txt
+  # Directories to scan for log files (Option A: file-based discovery)
+  scan_directories:
+    - enabled: true
+      path: /home/jetson/.ros/log/
+      name_prefix: ROS2-
+      description: "ROS2 runtime node logs"
   # Enable search functionality
   search:
     enabled: true
