@@ -33,7 +33,8 @@ set -e
 #***********************************************************************
 
 SERVICE_NAME="musohu-web"
-PORT="80"
+# Default port should match the production service (see setup_production_web_service.sh)
+PORT="8000"
 
 #***********************************************************************
 # Color Definitions

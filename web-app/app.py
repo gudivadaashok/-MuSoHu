@@ -233,39 +233,68 @@ async def get_disk_space():
 
 @app.get("/api/logs")
 async def get_logs(source: str = Query(default="musohu", alias="source")):
-        # ...existing code for file-based logs...
-        log_files = {}
-        scan_directories = log_viewer_config.get('scan_directories', [])
+    """Legacy logs endpoint: return last N lines from a selected log source.
 
-        for dir_config in scan_directories:
+    Supports:
+    - File-based logs discovered from configured scan directories or explicit sources
+    - System journal logs when log_dirs entry has type: journalctl
+    """
+    try:
+        log_source = source
+        log_viewer_config = config.get('log_viewer', {})
+        max_lines = int(log_viewer_config.get('max_lines', 100))
+
+        # Check if this is a journalctl source via log_dirs config
+        log_dirs = config.get('log_dirs', [])
+        journal_entry = next((d for d in log_dirs if d.get('key') == log_source and d.get('type') == 'journalctl'), None)
+        if journal_entry is not None:
+            try:
+                result = subprocess.run(
+                    ['journalctl', '-n', str(max_lines), '--no-pager', '--output=short-iso'],
+                    capture_output=True, text=True, check=True
+                )
+                lines = [ln for ln in result.stdout.strip().split('\n') if ln]
+                logs = []
+                for line in lines:
+                    parts = line.split(' ', 2)
+                    if len(parts) == 3:
+                        timestamp, _host, rest = parts
+                        logs.append({'timestamp': timestamp, 'level': 'INFO', 'message': rest})
+                    else:
+                        logs.append({'timestamp': '', 'level': 'INFO', 'message': line})
+                return JSONResponse(content={'logs': logs, 'source': log_source})
+            except Exception as e:
+                logger.error(f'Error reading journalctl logs: {str(e)}')
+                return JSONResponse(content={'logs': [], 'error': f'Error reading journalctl logs: {str(e)}'}, status_code=500)
+
+        # Build file-based sources mapping
+        log_files = {}
+
+        # 1) Scan configured directories
+        for dir_config in log_viewer_config.get('scan_directories', []):
             if not dir_config.get('enabled', True):
                 continue
-
             dir_path = dir_config.get('path', '')
-
             if os.path.exists(dir_path) and os.path.isdir(dir_path):
                 try:
                     for filename in os.listdir(dir_path):
                         file_path = os.path.join(dir_path, filename)
-                        # Only include files, not directories
                         if os.path.isfile(file_path):
                             log_id = filename.replace('.', '_')
-                            # Handle ID collisions
                             if log_id in log_files:
                                 log_id = f"{os.path.basename(dir_path.rstrip('/'))}_{log_id}"
                             log_files[log_id] = file_path
                 except Exception as e:
                     logger.error(f"Error scanning directory {dir_path}: {e}")
 
-        # Add individual sources from config
-        sources = log_viewer_config.get('sources', [])
-        for source in sources:
-            if source.get('enabled', True):
-                log_files[source['id']] = source['path']
+        # 2) Explicit sources (optional)
+        for src in log_viewer_config.get('sources', []):
+            if src.get('enabled', True):
+                log_files[src['id']] = src['path']
 
-        # Fallback to scanning logs/ folder if nothing configured
+        # 3) Fallback to local logs/ directory
         if not log_files:
-            logs_dir = 'logs'
+            logs_dir = os.path.join(BASE_DIR, 'logs')
             if os.path.exists(logs_dir) and os.path.isdir(logs_dir):
                 for filename in os.listdir(logs_dir):
                     file_path = os.path.join(logs_dir, filename)
@@ -273,114 +302,60 @@ async def get_logs(source: str = Query(default="musohu", alias="source")):
                         log_id = filename.replace('.', '_')
                         log_files[log_id] = file_path
 
-        log_file = log_files.get(log_source, log_files.get('musohu', 'logs/musohu.log'))
+        # Resolve desired file path
+        log_file = log_files.get(log_source)
+        if not log_file:
+            # Default to a common app log file
+            candidate = os.path.join(BASE_DIR, 'logs', 'musohu.log')
+            log_file = candidate if os.path.exists(candidate) else None
+
+        if not log_file:
+            return JSONResponse(content={'logs': [], 'error': 'Log file not found'}, status_code=404)
+
+        # Validate extension
+        allowed_extensions = log_viewer_config.get('allowed_extensions', ['.log', '.txt'])
+        if os.path.splitext(log_file)[1] not in allowed_extensions:
+            return JSONResponse(content={
+                'logs': [],
+                'error': f'Unable to display this file type. Only {", ".join(allowed_extensions)} files can be displayed.'
+            }, status_code=400)
+
+        # Read file and return last N lines
         logs = []
-
-        if os.path.exists(log_file):
-            # Check if file extension is allowed
-            allowed_extensions = log_viewer_config.get('allowed_extensions', ['.log', '.txt'])
-            file_extension = os.path.splitext(log_file)[1]
-
-            if file_extension not in allowed_extensions:
-                return JSONResponse(content={
-                    'logs': [],
-                    'error': f'Unable to display this file type. Only {", ".join(allowed_extensions)} files can be displayed.'
-                }, status_code=400)
-
-            try:
-                with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
-                    lines = f.readlines()
-                    # Get last N lines based on config
-                    lines = lines[-max_lines:]
-
-                    for line in lines:
-                        line = line.strip()
-                        if line:
-                            # Parse log format: [timestamp] LEVEL: message
-                            parts = line.split('] ', 1)
-                            if len(parts) == 2:
-                                timestamp = parts[0].replace('[', '')
-                                rest = parts[1]
-                                level_parts = rest.split(': ', 1)
-                                if len(level_parts) == 2:
-                                    level = level_parts[0]
-                                    message = level_parts[1]
-                                    logs.append({
-                                        'timestamp': timestamp,
-                                        'level': level,
-                                        'message': message
-                                    })
-                                else:
-                                    logs.append({
-                                        'timestamp': timestamp,
-                                        'level': 'INFO',
-                                        'message': rest
-                                    })
-                            else:
-                                logs.append({
-                                    'timestamp': '',
-                                    'level': 'INFO',
-                                    'message': line
-                                })
-            except UnicodeDecodeError:
-                return JSONResponse(content={
-                    'logs': [],
-                    'error': 'Unable to display this file. The file contains non-text or binary data.'
-                }, status_code=400)
-            except Exception as read_error:
-                logger.error(f'Error reading file {log_file}: {str(read_error)}')
-                return JSONResponse(content={
-                    'logs': [],
-                    'error': f'Error reading file: {str(read_error)}'
-                }, status_code=500)
-        else:
-            return JSONResponse(content={'logs': [], 'error': f'Log file not found: {log_file}'}, status_code=404)
+        try:
+            with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
+                lines = f.readlines()
+                lines = lines[-max_lines:] if max_lines > 0 else lines
+                for line in lines:
+                    line = line.rstrip('\n')
+                    if not line:
+                        continue
+                    # Try to parse "[timestamp] LEVEL: message" format; fall back otherwise
+                    if '] ' in line:
+                        parts = line.split('] ', 1)
+                        timestamp = parts[0].replace('[', '')
+                        rest = parts[1]
+                        level = 'INFO'
+                        message = rest
+                        if ': ' in rest:
+                            lvl, msg = rest.split(': ', 1)
+                            level, message = lvl, msg
+                        logs.append({'timestamp': timestamp, 'level': level, 'message': message})
+                    else:
+                        logs.append({'timestamp': '', 'level': 'INFO', 'message': line})
+        except UnicodeDecodeError:
+            return JSONResponse(content={
+                'logs': [],
+                'error': 'Unable to display this file. The file contains non-text or binary data.'
+            }, status_code=400)
+        except Exception as read_error:
+            logger.error(f'Error reading file {log_file}: {str(read_error)}')
+            return JSONResponse(content={'logs': [], 'error': f'Error reading file: {str(read_error)}'}, status_code=500)
 
         return JSONResponse(content={'logs': logs, 'source': log_source})
     except Exception as e:
         logger.error(f'Failed to read logs: {str(e)}')
         return JSONResponse(content={'error': str(e)}, status_code=500)
-    try:
-        log_source = source
-        log_viewer_config = config.get('log_viewer', {})
-        max_lines = log_viewer_config.get('max_lines', 100)
-
-        # Find log_dirs entry for this source
-        log_dirs = config.get('log_dirs', [])
-        log_dir_entry = next((d for d in log_dirs if d.get('key') == log_source), None)
-
-        if log_dir_entry and log_dir_entry.get('type') == 'journalctl':
-            # Fetch systemd journal logs
-            try:
-                # Get last N lines from journalctl
-                result = subprocess.run([
-                    'journalctl', '-n', str(max_lines), '--no-pager', '--output=short-iso'
-                ], capture_output=True, text=True, check=True)
-                lines = result.stdout.strip().split('\n')
-                logs = []
-                for line in lines:
-                    # Example journalctl line: '2025-11-14T10:00:00+00:00 hostname service[pid]: message'
-                    parts = line.split(' ', 2)
-                    if len(parts) == 3:
-                        timestamp, host, rest = parts
-                        logs.append({
-                            'timestamp': timestamp,
-                            'level': 'INFO',
-                            'message': rest
-                        })
-                    else:
-                        logs.append({
-                            'timestamp': '',
-                            'level': 'INFO',
-                            'message': line
-                        })
-                return JSONResponse(content={'logs': logs, 'source': log_source})
-            except Exception as e:
-                logger.error(f'Error reading journalctl logs: {str(e)}')
-                return JSONResponse(content={'logs': [], 'error': f'Error reading journalctl logs: {str(e)}'})
-
-        # ...existing code for file-based logs...
-        # (leave rest of function unchanged)
 
 
 # --------------------- API Routes - Log Management -------------------------
